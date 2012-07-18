@@ -5,3 +5,5 @@
 *.exe
 obj/*
 Debug/*
+FEVERMJ/*
+*.zip

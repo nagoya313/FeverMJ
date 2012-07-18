@@ -17,8 +17,13 @@ class Players {
                                        //{Pai::P7, Pai::P8, Pai::P9, Pai::P9, Pai::P9, Pai::S5, Pai::S5, Pai::East, Pai::East, Pai::East, Pai::South, Pai::South, Pai::South},
                                        //{Pai::P7, Pai::P8, Pai::P9, Pai::S1, Pai::S2, Pai::S3, Pai::S5, Pai::S6, Pai::S7, Pai::S9, Pai::South, Pai::South, Pai::South},
                                        //{Pai::P1, Pai::P1, Pai::P2, Pai::P3, Pai::P4, Pai::P5, Pai::P5, Pai::P6, Pai::P7, Pai::P9, Pai::South, Pai::South, Pai::South},
-                                       {Pai::P1, Pai::P1, Pai::P2, Pai::P3, Pai::P4, Pai::White, Pai::White, Pai::White, Pai::From, Pai::From, Pai::Center, Pai::Center, Pai::Center},
-                                       //field.GetFirstPais(),
+                                       //{Pai::P1, Pai::P1, Pai::P2, Pai::P3, Pai::P4, Pai::White, Pai::White, Pai::White, Pai::From, Pai::From, Pai::Center, Pai::Center, Pai::Center},
+                                       //{Pai::P2, Pai::P3, Pai::P4, Pai::P5, Pai::P5, Pai::P6, Pai::P6, Pai::P7, Pai::S3, Pai::S4, Pai::S5, Pai::S8, Pai::S8},
+                                       //{Pai::P2, Pai::P3, Pai::P4, Pai::P7, Pai::P8, Pai::S1, Pai::S2, Pai::S3, Pai::S3, Pai::S3, Pai::S6, Pai::S7, Pai::S8},
+                                       //{Pai::P3, Pai::P3, Pai::P4, Pai::P4, Pai::P5, Pai::P5, Pai::P6, Pai::P6, Pai::P7, Pai::P7, Pai::P8, Pai::East, Pai::East},
+                                       //{Pai::P1, Pai::P1, Pai::P1, Pai::P2, Pai::P2, Pai::P3, Pai::P3, Pai::P3, Pai::P7, Pai::P8, Pai::P9, Pai::East, Pai::East},
+                                       //{Pai::M9, Pai::M9, Pai::S1, Pai::S1, Pai::S1, Pai::S2, Pai::S3, Pai::S4, Pai::S4, Pai::S5, Pai::S6, Pai::S7, Pai::S8},
+                                       field.GetFirstPais(),
                                        GetStartWind(field, Wind::South));
     players[House::Down].GameStartInit(field.GetFirstPais(), GetStartWind(field, Wind::West));
   }

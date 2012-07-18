@@ -9,6 +9,7 @@
 #include "role_hand.hpp"
 #include "squeal.hpp"
 #include "wind.hpp"
+#include "../utility/log.hpp"
 
 namespace FeverMJ { namespace Model {
 inline
@@ -203,6 +204,7 @@ void CheckRole(Wind selfWind,
                RoleResult &result) {
   result.huCount += handRole.huCount;
   if (playerState.IsMenzen()) {
+    FEVERMJ_LOG("èáéqéÌóﬁ:%d èáéqå¬êî:%d\n", handRole.straightKindCount, handRole.straightCount);
     CheckMenzenRole(handRole.straightKindCount, handRole.straightCount, result);
   }
   if (!(result.roleBits & Role::Peace)) {
@@ -329,10 +331,10 @@ void CheckFirstRole(const PlayerState &playerState, RoleResult &result) {
   if (playerState.IsHeavenGoal()) {
     result.roleBits |= Role::HeavenGoal;
     result.hanCount += 13;
-  } else if (playerState.IsGrandGoal()) {
+  } else if (playerState.IsGrandGoal() && playerState.IsTumoGoal()) {
     result.roleBits |= Role::GroundGoal;
     result.hanCount += 13;
-  } else if (playerState.IsPersonGoal()) {
+  } else if (playerState.IsPersonGoal() && !playerState.IsTumoGoal()) {
     result.roleBits |= Role::PersonGoal;
     result.hanCount += 5;
   }

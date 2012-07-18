@@ -10,6 +10,7 @@
 #include "player_state.hpp"
 #include "squeal.hpp"
 #include "wind.hpp"
+#include "../utility/log.hpp"
 
 namespace FeverMJ { namespace Model {
 class Player {
@@ -38,7 +39,7 @@ class Player {
 
   Point Ron(Pai pai, Field &field) {
     if (hand.GetWaitPais() & (1 << pai) && !playerState.IsFuriten()) {
-      printfDx("ロンった？\n");
+      FEVERMJ_LOG("ロンった？\n");
       return hand.IsRonGoal(pai, selfWind, squeal, field, playerState);
     }
     return {};
@@ -303,9 +304,9 @@ class Player {
     assert(pai != Pai::Invalid);
     furitenList.clear();
     hand.Tumo(pai);
-    printfDx("待ち:%x\n", hand.GetWaitPais());
+    FEVERMJ_LOG("待ち:%x\n", hand.GetWaitPais());
     if (hand.GetWaitPais() & (1 << hand.GetTumo())) {
-      printfDx("ツモった\n");
+      FEVERMJ_LOG("ツモった\n");
       return hand.IsTumoGoal(selfWind, squeal, field, playerState);
     }
     return {};

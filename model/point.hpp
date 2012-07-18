@@ -60,7 +60,15 @@ class Point {
   }
 
   int GetBasicPoint() const {
-    if (han >= 20) {
+    if (han >= 60) {
+      return 256000;
+    } else if (han >= 50) {
+      return 128000;
+    } else if (han >= 40) {
+      return 64000;
+    } else if (han >= 30) {
+      return 32000;
+    } else if (han >= 20) {
       return 16000;
     } else if (han >= 13) {
       return 8000;

@@ -5,6 +5,7 @@
 #include "pai.hpp"
 #include "role.hpp"
 #include "wind.hpp"
+#include "../utility/algtorithm.hpp"
 
 namespace FeverMJ { namespace Model {
 namespace WaitType_ {
@@ -98,6 +99,11 @@ class RoleHand {
     role.head = head;
     role.isKokusiMuso = isKokusiMuso;
     role.isSevenDouble = isSevenDouble;
+    if (role.isKokusiMuso && role.isSevenDouble) {
+      if (IsTyuntyanPai(head)) {
+        role.isTyanta = false;
+      }
+    }
     return role;
   }
 
@@ -152,12 +158,9 @@ class RoleHand {
 
   void CheckStraightRoleState(Pai goalPai, RoleHandState &role) {
     if (waitType == WaitType::BothSide) {
-      if (both == goalPai) {
-        straightList.push_back(goalPai);
-      } else {
-        straightList.push_back(static_cast<Pai>(goalPai - 2));
-      }
+      straightList.push_back(both == goalPai ? goalPai : static_cast<Pai>(goalPai - 2));
     }
+    boost::sort(straightList);
     Pai beforePai = Pai::Invalid;
     for (const Pai pai : straightList) {
       const int number = GetNumber(pai);
@@ -169,6 +172,9 @@ class RoleHand {
       }
       if (pai != beforePai) {
         ++role.straightKindCount;
+        beforePai = pai;
+      } else {
+        beforePai = Pai::Invalid;
       }
       ++role.straightCount;
     }

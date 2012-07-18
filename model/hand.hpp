@@ -11,6 +11,7 @@
 #include "squeal.hpp"
 #include "wind.hpp"
 #include "../utility/algtorithm.hpp"
+#include "../utility/log.hpp"
 
 namespace FeverMJ { namespace Model {
 class Hand {
@@ -32,38 +33,13 @@ class Hand {
     ++kind[pai];
   }
 
-  Point IsTumoGoal(Wind selfWind, Squeal squeal, const Field &field, PlayerState playerState) {
+  Point IsTumoGoal(Wind selfWind, const Squeal &squeal, const Field &field, PlayerState playerState) {
     assert(waitPais & (1 << tumo));
-    std::vector<RoleHand> goals;
-    boost::copy_if(tenpais, std::back_inserter(goals), [this](const RoleHand &hand) {
-      printfDx("%x\n", hand.GetWaitPais() & (1 << tumo));
-      return hand.GetWaitPais() & (1 << tumo);
-    });
-    std::vector<RoleHandState> states;
-    boost::transform(goals, std::back_inserter(states), [this, selfWind](RoleHand x) {
-      return x.GetRoleState(true, tumo, selfWind);
-    });
-    // TODO:— ƒhƒ‰‚É‘Î‰ž‚·‚é
-    std::uint32_t paiKindBits = 0x0;
-    int doraCount = 0;
-    for (int i = 0; i < paiKindMax; ++i) {
-      if (kind[i]) {
-        paiKindBits |= 1 << i;
-        for (const Pai dora : field.GetDoraList(!playerState.IsSilentTenpai())) {
-          if (i == dora) {
-            doraCount += kind[i];
-          }
-        }
-      }
-    }
+    std::vector<RoleHandState> states = GetStates(GetGoals(tumo), selfWind, tumo, true);
     playerState.SetTumoGoal();
     const auto squealRole = squeal.GetRoleState(field.GetDoraList(!playerState.IsSilentTenpai()));
-    RoleResult result;
-    result.huCount = 20 + squealRole.huCount;
-    result.doraCount = doraCount + squealRole.doraCount;
-    paiKindBits |= squealRole.paiKindBits;
-    PreCheckRole(playerState, paiKindBits, hand.size(), squealRole, field, result);
-    CheckBitsRole(paiKindBits, kind, playerState, result);
+    const std::uint32_t paiKindBits = GetPaiKaind() | squealRole.paiKindBits;
+    RoleResult result = GetPreRole(paiKindBits, squealRole, field, playerState);
     std::vector<Point> results;
     for (const auto &state : states) {
       RoleResult temp(result);
@@ -72,12 +48,10 @@ class Hand {
           CheckRole(selfWind, paiKindBits, playerState, state, squealRole, temp);
         }
       }
-      printfDx("%d–|,–ð:%x\n", temp.hanCount, temp.roleBits);
+      FEVERMJ_LOG("%d–|,–ð:%x\n", temp.hanCount, temp.roleBits);
       if (temp.hanCount >= 2) {
         if (!(temp.roleBits & Role::Peace)) {
           temp.huCount += 2;
-        } else if (temp.huCount == 20) {
-          temp.huCount = 30;
         }
         if (temp.roleBits & Role::SevenDouble || temp.roleBits & Role::KokusiMuso) {
           temp.huCount = 25;
@@ -87,50 +61,16 @@ class Hand {
         results.emplace_back(temp);
       }
     }
-    if (!results.empty()) {
-      auto point = *boost::max_element(results, 
-                                       [](const Point &lhs, const Point &rhs) {
-                                        return lhs.GetBasicPoint() < rhs.GetBasicPoint();
-                                       });
-      point.CheckBounus(playerState);
-      printfDx("%d–|,–ð:%x\n", point.GetHan(), point.GetRole());
-      return point;
-    }
-    return {};
+    return !results.empty() ? SelectPoint(results, playerState) : Point{};
   }
 
-  Point IsRonGoal(Pai pai, Wind selfWind, Squeal squeal, const Field &field, PlayerState playerState) {
+  Point IsRonGoal(Pai pai, Wind selfWind, const Squeal &squeal, const Field &field, PlayerState playerState) {
     assert(waitPais & (1 << pai));
     ++kind[pai];
-    std::vector<RoleHand> goals;
-    boost::copy_if(tenpais, std::back_inserter(goals), [this, pai](const RoleHand &hand) {
-      printfDx("%x\n", hand.GetWaitPais() & (1 << pai));
-      return hand.GetWaitPais() & (1 << pai);
-    });
-    std::vector<RoleHandState> states;
-    boost::transform(goals, std::back_inserter(states), [this, selfWind, pai](RoleHand x) {
-      return x.GetRoleState(false, pai, selfWind);
-    });
-    // TODO:— ƒhƒ‰‚É‘Î‰ž‚·‚é
-    std::uint32_t paiKindBits = 0x0;
-    int doraCount = 0;
-    for (int i = 0; i < paiKindMax; ++i) {
-      if (kind[i]) {
-        paiKindBits |= 1 << i;
-        for (const Pai dora : field.GetDoraList(!playerState.IsSilentTenpai())) {
-          if (i == dora) {
-            doraCount += kind[i];
-          }
-        }
-      }
-    }
+    std::vector<RoleHandState> states = GetStates(GetGoals(pai), selfWind, pai, false);
     const auto squealRole = squeal.GetRoleState(field.GetDoraList(!playerState.IsSilentTenpai()));
-    RoleResult result;
-    result.huCount = 20 + squealRole.huCount;
-    result.doraCount = doraCount + squealRole.doraCount;
-    paiKindBits |= squealRole.paiKindBits;
-    PreCheckRole(playerState, paiKindBits, hand.size(), squealRole, field, result);
-    CheckBitsRole(paiKindBits, kind, playerState, result);
+    const std::uint32_t paiKindBits = GetPaiKaind() | squealRole.paiKindBits;
+    RoleResult result = GetPreRole(paiKindBits, squealRole, field, playerState);
     std::vector<Point> results;
     for (const auto &state : states) {
       RoleResult temp(result);
@@ -139,11 +79,11 @@ class Hand {
           CheckRole(selfWind, paiKindBits, playerState, state, squealRole, temp);
         }
       }
-      printfDx("%d–|,–ð:%x\n", temp.hanCount, temp.roleBits);
+      FEVERMJ_LOG("%d–|,–ð:%x\n", temp.hanCount, temp.roleBits);
       if (temp.hanCount >= 2) {
         if (playerState.IsMenzen()) {
           temp.huCount += 10;
-        } else if (temp.huCount == 20) {
+        } else if (!(temp.roleBits & Role::Peace) && temp.huCount == 20) {
           temp.huCount = 30;
         }
         if (temp.roleBits & Role::SevenDouble || temp.roleBits & Role::KokusiMuso) {
@@ -155,16 +95,7 @@ class Hand {
       }
     }
     --kind[pai];
-    if (!results.empty()) {
-      auto point = *boost::max_element(results, 
-                                       [](const Point &lhs, const Point &rhs) {
-                                        return lhs.GetBasicPoint() < rhs.GetBasicPoint();
-                                       });
-      point.CheckBounus(playerState);
-      printfDx("%d–|,–ð:%x\n", point.GetHan(), point.GetRole());
-      return point;
-    }
-    return {};
+    return !results.empty() ? SelectPoint(results, playerState) : Point{};
   }
 
   Pai TumoCut() {
@@ -284,7 +215,7 @@ class Hand {
 
   void CheckTenpai() {
     waitPais = Model::GetWaitPai(kind, hand.size() == 13, tenpais);
-    printfDx("wait kind:%d\n", tenpais.size());
+    FEVERMJ_LOG("wait kind:%d\n", tenpais.size());
   }
   
   std::uint32_t GetWaitPais() const {
@@ -335,10 +266,8 @@ class Hand {
   void GetTiCandidateBetweenWait(std::vector<std::pair<Pai, Pai>> &tiCandidate, Pai pai) const {
     assert(pai != Pai::Invalid);
     assert(pai >= Pai::P1 && pai <= Pai::S9);
-    if (GetNumber(pai) != 0 &&
-        GetNumber(pai) != 8 &&
-        kind[pai - 1] &&
-        kind[pai + 1]) {
+    const int number = GetNumber(pai);
+    if (number != 0 && number != 8 && kind[pai - 1] && kind[pai + 1]) {
       for (const Pai p : hand) {
         if (p != pai && p != pai - 1 && p != pai + 1) {
           tiCandidate.push_back({static_cast<Pai>(pai - 1), static_cast<Pai>(pai + 1)});
@@ -346,6 +275,71 @@ class Hand {
         }
       }
     }
+  }
+
+  std::vector<RoleHand> GetGoals(Pai pai) const {
+    assert(pai != Pai::Invalid);
+    std::vector<RoleHand> goals;
+    boost::copy_if(tenpais, std::back_inserter(goals), [this, pai](const RoleHand &hand) {
+      FEVERMJ_LOG("%x\n", hand.GetWaitPais() & (1 << pai));
+      return hand.GetWaitPais() & (1 << pai);
+    });
+    return goals;
+  }
+
+  static std::vector<RoleHandState> GetStates(std::vector<RoleHand> &&goals, Wind selfWind, Pai pai, bool isTumo) {
+    std::vector<RoleHandState> states;
+    boost::transform(goals, std::back_inserter(states), [selfWind, isTumo, pai](RoleHand x) {
+      return x.GetRoleState(isTumo, pai, selfWind);
+    });
+    return states;
+  }
+
+  std::uint32_t GetPaiKaind() const {
+    std::uint32_t paiKindBits = 0x0;
+    for (int i = 0; i < paiKindMax; ++i) {
+      if (kind[i]) {
+        paiKindBits |= 1 << i;
+      }
+    }
+    return paiKindBits;
+  }
+
+  int GetDoraCount(const Field &field, const PlayerState &playerState) const {
+    int doraCount = 0;
+    // TODO:— ƒhƒ‰‚É‘Î‰ž‚·‚é
+    for (const Pai dora : field.GetDoraList(!playerState.IsSilentTenpai())) {
+      if (kind[dora]) {
+        doraCount += kind[dora];
+      }
+    }
+    return doraCount;
+  }
+
+  static Point SelectPoint(const std::vector<Point> &results, const PlayerState &playerState) {
+    auto point = *boost::max_element(results, 
+                                     [](const Point &lhs, const Point &rhs) {
+                                       return lhs.GetHan() == rhs.GetHan() ?
+                                              lhs.GetHu() < rhs.GetHu() : 
+                                              lhs.GetBasicPoint() == rhs.GetBasicPoint() ?
+                                              lhs.GetHan() < rhs.GetHan() : 
+                                              lhs.GetBasicPoint() < rhs.GetBasicPoint();
+                                     });
+    point.CheckBounus(playerState);
+    FEVERMJ_LOG("%d–|,–ð:%x\n", point.GetHan(), point.GetRole());
+    return point;
+  }
+
+  RoleResult GetPreRole(std::uint32_t paiKindBits,
+                        const RoleSquealState &squealRole,
+                        const Field &field,
+                        const PlayerState &playerState) const {
+    RoleResult result;
+    result.huCount = 20 + squealRole.huCount;
+    result.doraCount = GetDoraCount(field, playerState) + squealRole.doraCount;
+    PreCheckRole(playerState, paiKindBits, hand.size(), squealRole, field, result);
+    CheckBitsRole(paiKindBits, kind, playerState, result);
+    return result;
   }
 
   std::vector<Pai> hand;
