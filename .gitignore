@@ -1,0 +1,7 @@
+*.log
+*.txt
+*.vcxproj*
+*.o
+*.exe
+obj/*
+Debug/*
