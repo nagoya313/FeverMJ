@@ -5,20 +5,17 @@
 namespace FeverMJ { namespace Model {
 class PlayerState {
  public:
-  void InitParent() {
-    state = Menzen | HeavenGoal;
+  void Init() {
+    state = Menzen | FirstTumo;
   }
-  
-  void InitChild() {
-    state = Menzen | GrandGoal | PersonGoal;
-  }
+ 
 
   void Squeal() {
     state &= ~Menzen;
   }
   
   void DeleteFirst() {
-    state &= ~(HeavenGoal | GrandGoal | PersonGoal | First | RinsyanKaiho);
+    state &= ~(FirstTumo | RinsyanKaiho | ReachFirstTumo);
   }
   
   void SetFuriten() {
@@ -65,18 +62,6 @@ class PlayerState {
     return state & DoubleFever;
   }
   
-  bool IsHeavenGoal() const {
-    return state & HeavenGoal;
-  }
-  
-  bool IsGrandGoal() const {
-    return state & GrandGoal;
-  }
-  
-  bool IsPersonGoal() const {
-    return state & PersonGoal;
-  }
-  
   bool IsTumoGoal() const {
     return state & TumoGoal;
   }
@@ -89,8 +74,12 @@ class PlayerState {
     return state & RinsyanKaiho;
   }
 
-  bool IsFirst() const {
-    return state & First;
+  bool IsFirstTumo() const {
+    return state & FirstTumo;
+  }
+
+  bool IsReachFirstTumo() const {
+    return state & ReachFirstTumo;
   }
 
   bool IsFuriten() const {
@@ -98,21 +87,19 @@ class PlayerState {
   }
  
  private:
-  enum {
+  enum : std::uint32_t {
     Reach = 1 << 0,
     DoubleReach = 1 << 1,
     Fever = 1 << 2,
     DoubleFever = 1 << 3,
-    HeavenGoal = 1 << 4,
-    GrandGoal = 1 << 5,
-    PersonGoal = 1 << 6,
-    RinsyanKaiho = 1 << 7,
-    Tyankan = 1 << 8,
-    Furiten = 1 << 9,
-    First = 1 << 10,
-    Menzen = 1 << 11,
-    Open = 1 << 12,
-    TumoGoal = 1 << 13
+    RinsyanKaiho = 1 << 4,
+    Tyankan = 1 << 5,
+    Furiten = 1 << 6,
+    FirstTumo = 1 << 7,
+    Menzen = 1 << 8,
+    Open = 1 << 9,
+    TumoGoal = 1 << 10,
+    ReachFirstTumo = 1 << 11
   };
   
   std::uint32_t state;

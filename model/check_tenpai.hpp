@@ -330,7 +330,6 @@ std::uint32_t GetEnableSevenDoubleWaitPai(PaiKindArray &kind, std::vector<RoleHa
   for (int i = 0; i < paiKindMax; ++i) {
     if (kind[i] >= 2) {
       kind[i] -= 2;
-      printfDx("ƒŠƒƒƒ“ƒy[’T‚·I\n");
       waitPaiBits |= GetStraightOnlyWaitPai(static_cast<Pai>(i), kind, tenpais);
       waitPaiBits |= GetStraightOnlyReverseWaitPai(static_cast<Pai>(i), kind, tenpais);
       kind[i] += 2;

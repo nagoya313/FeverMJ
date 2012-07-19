@@ -3,7 +3,10 @@
 *.vcxproj*
 *.o
 *.exe
+obj
 obj/*
+Debug
 Debug/*
-FEVERMJ/*
+FeverMJ
+FeverMJ/*
 *.zip

@@ -60,7 +60,7 @@ int CheckWind(Wind selfWind, std::uint32_t tripleBits, RoleResult &result) {
           ++result.hanCount;
         }
         if (i == selfWind) {
-          result.roleBits |= Role::SelfWind;
+          result.roleBits |= (Role::SelfEastWind << 1);
           ++result.hanCount;
         }
       }
@@ -73,7 +73,7 @@ int CheckWind(Wind selfWind, std::uint32_t tripleBits, RoleResult &result) {
 inline
 int CheckThree(std::uint32_t tripleBits, RoleResult &result) {
   int threeCount = 0;
-  for (std::uint64_t i = 0LL; i < 3LL; ++i) {
+  for (int i = 0; i < 3; ++i) {
     if (tripleBits & (1 << (Pai::White + i))) {
       result.roleBits |= (Role::White << i);
       ++result.hanCount;
@@ -327,21 +327,25 @@ void CheckReachRole(const PlayerState &playerState, RoleResult &result) {
 }
 
 inline
-void CheckFirstRole(const PlayerState &playerState, RoleResult &result) {
-  if (playerState.IsHeavenGoal()) {
-    result.roleBits |= Role::HeavenGoal;
-    result.hanCount += 13;
-  } else if (playerState.IsGrandGoal() && playerState.IsTumoGoal()) {
-    result.roleBits |= Role::GroundGoal;
-    result.hanCount += 13;
-  } else if (playerState.IsPersonGoal() && !playerState.IsTumoGoal()) {
-    result.roleBits |= Role::PersonGoal;
-    result.hanCount += 5;
+void CheckFirstRole(Wind selfWind, const PlayerState &playerState, RoleResult &result) {
+  if (playerState.IsFirstTumo()) {
+    if (playerState.IsTumoGoal()) {
+      if (selfWind == Wind::East) {
+        result.roleBits |= Role::HeavenGoal;
+      } else {
+        result.roleBits |= Role::GroundGoal;
+      }
+      result.hanCount += 13;
+    } else {
+      result.roleBits |= Role::PersonGoal;
+      result.hanCount += 5;
+    }
   }
 }
 
 inline
-void PreCheckRole(const PlayerState &playerState,
+void PreCheckRole(Wind selfWind,
+                  const PlayerState &playerState,
                   std::uint32_t paiKindBits,
                   int handSize,
                   const RoleSquealState &squealRole,
@@ -352,7 +356,7 @@ void PreCheckRole(const PlayerState &playerState,
       result.roleBits |= Role::Tumo;
       ++result.hanCount;
     }
-    CheckFirstRole(playerState, result);
+    CheckFirstRole(selfWind, playerState, result);
     CheckReachRole(playerState, result);
   } else {
     if (handSize == 1 && !squealRole.darkTripleCount) {

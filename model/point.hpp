@@ -30,7 +30,7 @@ class Point {
   }
 
   void CheckBounus(const PlayerState &playerState) {
-    if (playerState.IsFirst()) {
+    if (playerState.IsReachFirstTumo()) {
       roleList |= Role::First;
       ++han;
     }

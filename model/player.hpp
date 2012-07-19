@@ -248,11 +248,7 @@ class Player {
     furitenList.clear();
     squealedList.clear();
     selfWind = wind;
-    if (IsParent()) {
-      playerState.InitParent();
-    } else {
-      playerState.InitChild();
-    }
+    playerState.Init();
     notSelectableBits = 0x0;
     hand.CheckTenpai();
   }

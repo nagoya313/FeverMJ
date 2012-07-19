@@ -90,13 +90,9 @@ class Status : boost::noncopyable {
     DrawFormatString(280, 300, GetPointColor(variationPoints[2]), "%d", variationPoints[2]);
     int y = 0;
     const auto role = point.GetRole();
-    for (std::uint64_t i = 0LL; i < 50LL; ++i) {
+    for (std::uint64_t i = 0LL; i < 52LL; ++i) {
       if (role & (1LL << i)) {
-        if (i == 11L) {
-          constexpr const char *wind[] = {"ìå", "ìÏ", "êº"};
-          const Model::House goleHouse = variationPoints[0] >= 0 ? Model::House::Up : variationPoints[1] >= 0 ? Model::House::Self : Model::House::Down; 
-          DrawFormatString(32, 144 + y * 32, GetColor(255, 255, 255), "%sÅ@%s\n", Model::roleString[i], wind[players[goleHouse].GetWind()]);
-        } else if (i == 49L) {
+        if (i == 51L) {
           DrawFormatString(32, 144 + y * 32, GetColor(255, 255, 255), "ÉhÉâÅ@%d\n", point.GetDoraCount());
         } else {
           DrawFormatString(32, 144 + y * 32, GetColor(255, 255, 255), "%s\n", Model::roleString[i]);
