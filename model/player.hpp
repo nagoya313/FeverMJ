@@ -176,6 +176,7 @@ class Player {
   }
 
   void PopBackRiver() {
+    squealedList.push_back(static_cast<Pai>(*std::prev(riverList.end()) % squealOffset));
     riverList.pop_back();
   }
 
