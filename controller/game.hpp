@@ -95,6 +95,7 @@ class Game : boost::noncopyable {
     players.AllDeleteFirst();
     gameView.SetWaitMode();
     gameView.SetSelectTiMode([this, pai] (const std::pair<Model::Pai, Model::Pai> &tiPair) {
+      players[Model::House::Up].PopBackRiver();
       players[Model::House::Self].Ti(pai, tiPair);
       sequence = [this] {CheckSelfSquealHand();};
       gameView.ResetSelectTiMode();
