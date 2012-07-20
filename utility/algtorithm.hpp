@@ -4,6 +4,7 @@
 #include <boost/algorithm/cxx11/any_of.hpp>
 #include <boost/algorithm/cxx11/copy_if.hpp>
 #include <boost/range/algorithm/equal_range.hpp>
+#include <boost/range/algorithm/find.hpp>
 #include <boost/range/algorithm/lower_bound.hpp>
 #include <boost/range/algorithm/max_element.hpp>
 #include <boost/range/algorithm/sort.hpp>

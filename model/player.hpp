@@ -84,12 +84,12 @@ class Player {
     squeal.AddTi(squealPai, pais);
     playerState.Squeal();
     DeleteFirst();
-    notSelectableBits |= (1 << squealPai) | (1 << pais.first) | (1 << pais.second);
+    notSelectableBits |= (1 << squealPai);
     if (pais.second - pais.first == 1) {
       const int number = GetNumber(squealPai);
       if (number < 6 && pais.first - squealPai == 1) {
         notSelectableBits |= 1 << (pais.second + 1);
-      } else if (number > 3 && squealPai - pais.second == 1) {
+      } else if (number > 2 && squealPai - pais.second == 1) {
         notSelectableBits |= 1 << (pais.first - 1);
       }
     }

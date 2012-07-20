@@ -14,6 +14,7 @@ namespace FeverMJ { namespace Controller {
 class Game : boost::noncopyable {
  public:
   Game() {
+    // TODO:どこが立家かのレスポンスを待つ
     field.FirstGameInit(static_cast<Model::House>(GetRand(2)));
     GameStart();
   }
@@ -26,6 +27,7 @@ class Game : boost::noncopyable {
 
  private:
   void GameStart() {
+    // TODO:配牌のレスポンスを待つ
     players.GameStartInit(field);
     const std::function<void ()> firstSequence[] = {
       [this] {UpHouseTumoWait();}, [this] {SelfTumo();}, [this] {DownHouseTumoWait();}
@@ -39,6 +41,7 @@ class Game : boost::noncopyable {
   }
 
   void UpHouseTernWait() {
+    // TODO:上家の処理待ちレスポンスを待つ
     const auto pai = players.TumoCut(Model::House::Up);
     if (field.IsPaiEmpty()) {
       sequence = [this] {FlowSet();};
@@ -49,6 +52,24 @@ class Game : boost::noncopyable {
 
   void UpHouseSquealWait(Model::Pai pai) {
     sequence = [this, pai] {CheckSelfSquealFromUpHouse(pai);};
+  }
+  
+  void DownHouseTumoWait() {
+    players[Model::House::Down].Tumo(field);
+    sequence = [this] {DownHouseTernWait();};
+  }
+  
+  void DownHouseTernWait() {
+    const auto pai = players.TumoCut(Model::House::Down);
+    if (field.IsPaiEmpty()) {
+      sequence = [this] {FlowSet();};
+    } else {
+      sequence = [this, pai] {DownHouseSquealWait(pai);};
+    }
+  }
+
+  void DownHouseSquealWait(Model::Pai pai) {
+    sequence = [this, pai] {CheckSelfSquealFromDownHouse(pai);};
   }
 
   void SelectKan(bool isAddKan) {
@@ -94,6 +115,7 @@ class Game : boost::noncopyable {
     if (field.IsPaiEmpty()) {
       sequence = [this] {FlowSet();};
     } else {
+      // TODO:切った牌を他家に送信
       sequence = [this] {DownHouseTumoWait();};
     }
     gameView.SetWaitMode();
@@ -162,6 +184,7 @@ class Game : boost::noncopyable {
   }
 
   void ThroughSqueal(Model::House house) {
+    // パスしたことを牌を切った家に送信
     if (house == Model::House::Up) {
       sequence = [this] {SelfTumo();};
     } else {
@@ -248,24 +271,6 @@ class Game : boost::noncopyable {
     sequence = [this] {CheckSelfHand(false, players[Model::House::Self].Tumo(field));};
   }
 
-  void DownHouseTernWait() {
-    const auto pai = players.TumoCut(Model::House::Down);
-    if (field.IsPaiEmpty()) {
-      sequence = [this] {FlowSet();};
-    } else {
-      sequence = [this, pai] {DownHouseSquealWait(pai);};
-    }
-  }
-
-  void DownHouseSquealWait(Model::Pai pai) {
-    sequence = [this, pai] {CheckSelfSquealFromDownHouse(pai);};
-  }
-
-  void DownHouseTumoWait() {
-    players[Model::House::Down].Tumo(field);
-    sequence = [this] {DownHouseTernWait();};
-  }
-
   void GotoNextGame() {
     gameView.SetStart();
     if (players[Model::House::Up].GetPoint() < 0 || 
@@ -305,6 +310,7 @@ class Game : boost::noncopyable {
   }
 
   void FlowSet() {
+    // TODO:形式聴牌に対応
     gameView.SetFlowSet([this] {
       GotoNextGame();
     }, {{0, 0, 0}});
