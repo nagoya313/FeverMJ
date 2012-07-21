@@ -9,6 +9,9 @@ class PlayerState {
     state = Menzen | FirstTumo;
   }
  
+  void SetReach() {
+    state |= Reach | ReachFirstTumo;
+  }
 
   void Squeal() {
     state &= ~Menzen;

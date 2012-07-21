@@ -42,12 +42,6 @@ class Self : boost::noncopyable {
     kanAction = action;
   }
 
-  void ResetSelectKanMode() {
-    isKan = false;
-    isTi = false;
-    isSelect = true;
-  }
-
   template <typename Action>
   void SetSelectTiMode(Action action, const std::vector<Model::TiPair> &list) {
     isKan = false;
@@ -57,10 +51,13 @@ class Self : boost::noncopyable {
     tiList = list;
   }
 
-  void ResetSelectTiMode() {
+  template <typename Action>
+  void SetSelectReachMode(std::uint32_t index, Action action) {
     isKan = false;
     isTi = false;
     isSelect = true;
+    reachIndex = index;
+    discardAction = action;
   }
 
   template <typename Action>
@@ -75,6 +72,7 @@ class Self : boost::noncopyable {
     isKan = false;
     isTi = false;
     isSelect = false;
+    reachIndex = 0x0;
   }
 
  private:
@@ -101,8 +99,9 @@ class Self : boost::noncopyable {
   void DrawHand(const Controller::Input &input, const Model::Player &self, const Utility::PaiImage &paiImage) {
     const int size = self.GetHandSize();
     const int selectedIndex = SelectedPaiIndex(input.GetPoint(), size);
+    const bool checkReach = !(reachIndex && !(reachIndex & (1 << selectedIndex)));
     for (int i = 0; i < size; ++i) {
-      const int y = isSelect && i == selectedIndex && self.IsCutablePai(i) ? 496 : 512;
+      const int y = isSelect && i == selectedIndex && self.IsCutablePai(i) && checkReach ? 496 : 512;
       const int imageHandle = isFlowSet ?
                               self.IsTenpai() ?
                               paiImage.GetUpHandle(self.GetHandPai(i)) :
@@ -112,13 +111,13 @@ class Self : boost::noncopyable {
     }
     const Model::Pai tumo = self.GetTumo();
     if (tumo != Model::Pai::Invalid) {
-      const int y = isSelect && selectedIndex == 14 ? 496 : 512;
+      const int y = isSelect && selectedIndex == 14 && checkReach ? 496 : 512;
       DrawGraph(105 + 33 * size, y, paiImage.GetHandHandle(tumo), TRUE);
     }
     if (isSelect && input.IsClecked()) {
-      if (selectedIndex >= 0 && selectedIndex < size && self.IsCutablePai(selectedIndex)) {
+      if (selectedIndex >= 0 && selectedIndex < size && self.IsCutablePai(selectedIndex) && checkReach) {
         discardAction(selectedIndex);
-      } else if (selectedIndex == 14) {
+      } else if (selectedIndex == 14 && checkReach) {
         discardAction(-1);
       }
     }
@@ -207,8 +206,15 @@ class Self : boost::noncopyable {
 
   void DrawRiver(const Model::Player &self, const Utility::PaiImage &paiImage) {
     const int size = self.GetRiverSize();
+    int x = 320;
     for (int i = 0; i < size; ++i) {
-      DrawGraph(320 + 33 * (i % 6), 320 + 44 * (i / 6), paiImage.GetUpHandle(self.GetRiverImageHandle(i)), TRUE);
+      if (!(i % 6)) {
+        x = 320;
+      }
+      const auto pai = self.GetRiverImageHandle(i);
+      DrawGraph(x, 320 + 44 * (i / 6),
+                pai < Model::squealOffset ? paiImage.GetUpHandle(pai) : paiImage.GetRightHandle(pai % Model::squealOffset), TRUE);
+      x += self.GetRiverImageHandle(i) < Model::squealOffset ? 33 : 44;
     }
   }
 
@@ -232,6 +238,7 @@ class Self : boost::noncopyable {
   bool isKan = false;
   bool isTi = false;
   bool isSelect = false;
+  std::uint32_t reachIndex = 0x0;
   std::function<void (int)> discardAction{[](int) {}};
   std::function<void (Model::Pai, Model::Pai)> kanAction{[](Model::Pai, Model::Pai) {}};
   std::function<void (const Model::TiPair &)> tiAction{[](const Model::TiPair &) {}};

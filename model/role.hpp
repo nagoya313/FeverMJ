@@ -23,7 +23,7 @@ constexpr const char *roleString[] = {
   "©•—@¼",
   "–|”v@–k",
   "–|”v@”’",
-  "–|”v@”­",
+  "–|”v@á¢",
   "–|”v@’†",
   "—äãŠJ‰Ô",
   "‘„È",
@@ -119,37 +119,6 @@ enum Role : std::uint64_t {
 }
 
 using Role_::Role;
-
-namespace RoleBits_ {
-enum RoleBits : std::uint32_t {
-  OneTriple   = (1 << Pai::M1) | (1 << Pai::P1) | (1 << Pai::S1),
-  NineTriple  = (1 << Pai::M9) | (1 << Pai::P9) | (1 << Pai::S9),
-  NotWord     = (1 << Pai::M1) | (1 << Pai::M9) | (1 << Pai::P1) | (1 << Pai::P2) | (1 << Pai::P3) |
-                (1 << Pai::P4) | (1 << Pai::P5) | (1 << Pai::P6) | (1 << Pai::P7) | (1 << Pai::P8) |
-                (1 << Pai::P9) | (1 << Pai::S1) | (1 << Pai::S2) | (1 << Pai::S3) | (1 << Pai::S4) |
-                (1 << Pai::S5) | (1 << Pai::S6) | (1 << Pai::S7) | (1 << Pai::S8) | (1 << Pai::S9),
-  Tanyao      = (1 << Pai::P2) | (1 << Pai::P3) | (1 << Pai::P4) | (1 << Pai::P5) | (1 << Pai::P6) |
-                (1 << Pai::P7) | (1 << Pai::P8) | (1 << Pai::S2) | (1 << Pai::S3) | (1 << Pai::S4) |
-                (1 << Pai::S5) | (1 << Pai::S6) | (1 << Pai::S7) | (1 << Pai::S8),
-  ManzuPure   = (1 << Pai::M1) | (1 << Pai::M9),
-  PinzuPure   = (1 << Pai::P1) | (1 << Pai::P2) | (1 << Pai::P3) | (1 << Pai::P4) | (1 << Pai::P5) |
-                (1 << Pai::P6) | (1 << Pai::P7) | (1 << Pai::P8) | (1 << Pai::P9),
-  SozuPure    = (1 << Pai::S1) | (1 << Pai::S2) | (1 << Pai::S3) | (1 << Pai::S4) | (1 << Pai::S5) |
-                (1 << Pai::S6) | (1 << Pai::S7) | (1 << Pai::S8) | (1 << Pai::S9),
-  GreenSingle = (1 << Pai::S2) | (1 << Pai::S3) | (1 << Pai::S4) | (1 << Pai::S6) | (1 << Pai::S8) |
-                (1 << Pai::From),
-  WordSingle  = (1 << Pai::East) | (1 << Pai::South) | (1 << Pai::West) | (1 << Pai::North) | (1 << Pai::White) |
-                (1 << Pai::From) | (1 << Pai::Center),
-  ManzuSingle = ManzuPure | WordSingle,
-  PinzuSingle = PinzuPure | WordSingle,
-  SozuSingle  = SozuPure | WordSingle,
-  PureOldHead = (1 << Pai::M1) | (1 << Pai::M9) | (1 << Pai::P1) | (1 << Pai::P9) | (1 << Pai::S1) | 
-                (1 << Pai::S9),
-  OldHead     = PureOldHead | WordSingle,
-};
-}
-
-using RoleBits_::RoleBits;
 
 struct RoleHandState {
   int huCount = 0;

@@ -51,7 +51,7 @@ class Game : boost::noncopyable {
   }
 
   void UpHouseSquealWait(Model::Pai pai) {
-    sequence = [this, pai] {CheckSelfSquealFromUpHouse(pai);};
+    sequence = [this, pai] {CheckSelfSqueal(Model::House::Up, pai);};
   }
   
   void DownHouseTumoWait() {
@@ -69,7 +69,7 @@ class Game : boost::noncopyable {
   }
 
   void DownHouseSquealWait(Model::Pai pai) {
-    sequence = [this, pai] {CheckSelfSquealFromDownHouse(pai);};
+    sequence = [this, pai] {CheckSelfSqueal(Model::House::Down, pai);};
   }
 
   void SelectKan(bool isAddKan) {
@@ -78,11 +78,16 @@ class Game : boost::noncopyable {
     gameView.SetSelectKanMode([this] (Model::Pai darkKanPai, Model::Pai addKanPai) {
       if (darkKanPai != Model::Pai::Invalid) {
         field.AddDora();
-        sequence = [this, darkKanPai] {CheckSelfHand(false, players[Model::House::Self].DarkKan(darkKanPai, field));};
+        sequence = [this, darkKanPai] {
+          if (players[Model::House::Self].GetPlayerState().IsReach()) {
+            CheckSelfReachHand(players[Model::House::Self].DarkKan(darkKanPai, field));
+          } else {
+           CheckSelfHand(false, players[Model::House::Self].DarkKan(darkKanPai, field));
+          }
+        };
       } else {
         sequence = [this, addKanPai] {CheckSelfHand(true, players[Model::House::Self].AddKan(addKanPai, field));};
       }        
-      gameView.ResetSelectKanMode();
       gameView.SetWaitMode();
     });
     if (isAddKan) {
@@ -98,7 +103,6 @@ class Game : boost::noncopyable {
       players[Model::House::Up].PopBackRiver();
       players[Model::House::Self].Ti(pai, tiPair);
       sequence = [this] {CheckSelfSquealHand();};
-      gameView.ResetSelectTiMode();
       gameView.SetWaitMode();
     }, tiList);
     sequence = [] {};
@@ -138,12 +142,25 @@ class Game : boost::noncopyable {
     sequence = [] {};
   }
 
-  void CheckSelfHand(bool isAddKan, const Model::Point &point) {
-    if (point.GetHan()) {
+  void SelectReach(std::uint32_t reachIndex) {
+    gameView.SetWaitMode();
+    // TODO:リーチ不成立時のリーチ棒、供託棒の処理
+    gameView.SetSelectReachMode(reachIndex, [this] (int index) {
+      SelfDiscardPai(index, false);
+      players[Model::House::Self].SetReach();
+    });
+    sequence = [] {};
+  }
+
+  void CheckSelfReachHand(const Model::Point &point) {
+    const auto han = point.GetHan();
+    if (han) {
       gameView.SetMenuMode([this, point] {
         SelectTumo(point);
       }, View::MenuMode::Tumo);
     }
+    // TODO:リーチ時の暗カン、抜き北に対応
+    /*
     if (!field.IsPaiEmpty()) {
       if (field.GetDoraCount() <= 5 && players[Model::House::Self].IsDarkOrAddKanenable()) {
         gameView.SetMenuMode([this, isAddKan] {
@@ -151,6 +168,41 @@ class Game : boost::noncopyable {
         }, View::MenuMode::Kan);
       }
       if (players[Model::House::Self].GetPaiCount(Model::Pai::North)) {
+        gameView.SetMenuMode([this, isAddKan] {
+          SelectNorth(isAddKan);
+        }, View::MenuMode::EraseNorth);
+      }
+    }*/
+    if (han) {
+      gameView.SetMenuMode([this] {
+        ThroughSqueal(Model::House::Up);
+        gameView.SetWaitMode();
+      }, View::MenuMode::Cancel);
+      sequence = [] {};
+    } else {
+      SelfDiscardPai(-1, false);
+    }
+  }
+
+  void CheckSelfHand(bool isAddKan, const Model::Point &point) {
+    if (point.GetHan()) {
+      gameView.SetMenuMode([this, point] {
+        SelectTumo(point);
+      }, View::MenuMode::Tumo);
+    }
+    const std::uint32_t reachIndex = players[Model::House::Self].GetReachEnableIndex();
+    if (reachIndex && field.GetTumoMountainSize() > 2) {
+      gameView.SetMenuMode([this, reachIndex] {
+        SelectReach(reachIndex);
+      }, View::MenuMode::Reach);
+    }
+    if (!field.IsPaiEmpty()) {
+      if (field.GetDoraCount() <= 5 && players[Model::House::Self].IsDarkOrAddKanenable() && !gameView.NotSquealButtonIsToggle()) {
+        gameView.SetMenuMode([this, isAddKan] {
+          SelectKan(isAddKan);
+        }, View::MenuMode::Kan);
+      }
+      if (players[Model::House::Self].GetPaiCount(Model::Pai::North) && !gameView.NotSquealButtonIsToggle()) {
         gameView.SetMenuMode([this, isAddKan] {
           SelectNorth(isAddKan);
         }, View::MenuMode::EraseNorth);
@@ -170,17 +222,14 @@ class Game : boost::noncopyable {
   }
 
   void Pon(Model::House house, Model::Pai pai) {
-    players.AllDeleteFirst();
-    players[house].PopBackRiver();
-    players[Model::House::Self].Pon(house, pai);
+    players.Pon(Model::House::Self, house, pai);
     sequence = [this] {CheckSelfSquealHand();};
     gameView.SetWaitMode();
   }
 
   void LightKan(Model::House house, Model::Pai pai) {
-    players.AllDeleteFirst();
-    players[house].PopBackRiver();
-    sequence = [this, house, pai] {CheckSelfHand(true, players[Model::House::Self].LightKan(house, pai, field));};
+    const auto point = players.LightKan(Model::House::Self, house, pai, field);
+    sequence = [this, point] {CheckSelfHand(true, point);};
     gameView.SetWaitMode();
   }
 
@@ -192,55 +241,26 @@ class Game : boost::noncopyable {
       sequence = [this] {UpHouseTumoWait();};
     }
   }
-  
-  void CheckSelfSquealFromDownHouse(Model::Pai pai) {
-    const bool isPonEnable = players[Model::House::Self].IsPonEnable(pai);
-    const bool isKanEnable = players[Model::House::Self].IsLightKanEnable(pai);
-    const auto point = players[Model::House::Self].Ron(pai, field);
-    if (point.GetHan()) {
-      gameView.SetMenuMode([this, point] {
-        SelectRon(point, Model::House::Down);
-      }, View::MenuMode::Ron);
-    }
-    if (isPonEnable) {
-      gameView.SetMenuMode([this, pai] {
-        Pon(Model::House::Down, pai);
-      }, View::MenuMode::Pon);
-    }
-    if (isKanEnable) {
-      gameView.SetMenuMode([this, pai] {
-        LightKan(Model::House::Down, pai);
-      }, View::MenuMode::Kan);
-    }
-    if (isPonEnable || isKanEnable || point.GetHan()) {
-      gameView.SetMenuMode([this] {
-        ThroughSqueal(Model::House::Down);
-        gameView.SetWaitMode();
-      }, View::MenuMode::Cancel);
-      sequence = [] {};
-    } else {
-      ThroughSqueal(Model::House::Down);
-    }
-  }
 
-  void CheckSelfSquealFromUpHouse(Model::Pai pai) {
-    const bool isPonEnable = players[Model::House::Self].IsPonEnable(pai);
-    const bool isKanEnable = players[Model::House::Self].IsLightKanEnable(pai);
-    const auto tiList = players[Model::House::Self].GetTiCandidate(pai);
+  void CheckSelfSqueal(Model::House house, Model::Pai pai) {
+    const bool isPonEnable = !players[Model::House::Self].GetPlayerState().IsReach() && players[Model::House::Self].IsPonEnable(pai)  && !gameView.NotSquealButtonIsToggle();
+    const bool isKanEnable = !players[Model::House::Self].GetPlayerState().IsReach() && players[Model::House::Self].IsLightKanEnable(pai)  && !gameView.NotSquealButtonIsToggle();
+    const auto tiList = !players[Model::House::Self].GetPlayerState().IsReach() && house == Model::House::Up && !gameView.NotSquealButtonIsToggle() ?
+                        players[Model::House::Self].GetTiCandidate(pai) : std::vector<Model::TiPair>{};
     const auto point = players[Model::House::Self].Ron(pai, field);
     if (point.GetHan()) {
-      gameView.SetMenuMode([this, point] {
-        SelectRon(point, Model::House::Up);
+      gameView.SetMenuMode([this, point, house] {
+        SelectRon(point, house);
       }, View::MenuMode::Ron);
     }
     if (isPonEnable) {
-      gameView.SetMenuMode([this, pai] {
-        Pon(Model::House::Up, pai);
+      gameView.SetMenuMode([this, pai, house] {
+        Pon(house, pai);
       }, View::MenuMode::Pon);
     }
     if (isKanEnable) {
-      gameView.SetMenuMode([this, pai] {
-        LightKan(Model::House::Up, pai);
+      gameView.SetMenuMode([this, pai, house] {
+        LightKan(house, pai);
       }, View::MenuMode::Kan);
     }
     if (!tiList.empty()) {
@@ -249,54 +269,54 @@ class Game : boost::noncopyable {
       }, View::MenuMode::Ti);
     }
     if (isPonEnable || isKanEnable || !tiList.empty() || point.GetHan()) {
-      gameView.SetMenuMode([this] {
-        ThroughSqueal(Model::House::Up);
+      gameView.SetMenuMode([this, house] {
+        ThroughSqueal(house);
         gameView.SetWaitMode();
       }, View::MenuMode::Cancel);
       sequence = [] {};
     } else {
-      ThroughSqueal(Model::House::Up);
+      ThroughSqueal(house);
     }
   }
 
   void SelectNorth(bool isAddKan) {
     players.AllDeleteFirst();
     gameView.SetWaitMode();
-    sequence = [this] {CheckSelfHand(false, players[Model::House::Self].EraseNorth(field));};
+    sequence = [this] {
+      if (players[Model::House::Self].GetPlayerState().IsReach()) {
+        CheckSelfReachHand(players[Model::House::Self].EraseNorth(field));
+      } else {
+        CheckSelfHand(false, players[Model::House::Self].EraseNorth(field));
+      }
+    };
     if (isAddKan) {
       field.AddDora();
     }
   }
 
   void SelfTumo() {
-    sequence = [this] {CheckSelfHand(false, players[Model::House::Self].Tumo(field));};
+    sequence = [this] {
+      if (players[Model::House::Self].GetPlayerState().IsReach()) {
+        CheckSelfReachHand(players[Model::House::Self].Tumo(field));
+      } else {
+        CheckSelfHand(false, players[Model::House::Self].Tumo(field));
+      }
+    };
   }
 
   void GotoNextGame() {
     gameView.SetStart();
-    if (players[Model::House::Up].GetPoint() < 0 || 
-        players[Model::House::Self].GetPoint() < 0 ||
-        players[Model::House::Down].GetPoint() < 0) {
+    if (players.HasFlyHouse()) {
       field.NextGameInit();
       GameStart();
     // TODO:テンパイ続行
-    /*
-    } else if (players[1].IsOya() && players[1].IsTenpai()) {
-      // 連チャン初期化
-      field.RenTyanInit();
-      players[0].InitOnaziKaze(field.GettHaiPai());
-      players[1].InitOnaziKaze(field.GettHaiPai());
-      players[2].InitOnaziKaze(field.GettHaiPai());
-      */
     } else {
       if (field.IsOLas()) {
         field.NextGameInit();
         GameStart();
       } else {
         field.NextSetInit();
-        players[Model::House::Up].NextSetInit(field.GetFirstPais());
-        players[Model::House::Self].NextSetInit(field.GetFirstPais());
-        players[Model::House::Down].NextSetInit(field.GetFirstPais());
+        players.NextSetInit(field);
       }
     }
     if (players[Model::House::Up].IsParent()) {

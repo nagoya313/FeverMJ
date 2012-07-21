@@ -99,7 +99,7 @@ class RoleHand {
     role.head = head;
     role.isKokusiMuso = isKokusiMuso;
     role.isSevenDouble = isSevenDouble;
-    if (role.isKokusiMuso && role.isSevenDouble) {
+    if (!role.isKokusiMuso && !role.isSevenDouble) {
       if (IsTyuntyanPai(head)) {
         role.isTyanta = false;
       }

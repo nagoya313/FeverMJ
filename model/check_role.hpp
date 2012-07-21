@@ -60,7 +60,7 @@ int CheckWind(Wind selfWind, std::uint32_t tripleBits, RoleResult &result) {
           ++result.hanCount;
         }
         if (i == selfWind) {
-          result.roleBits |= (Role::SelfEastWind << 1);
+          result.roleBits |= (Role::SelfEastWind << i);
           ++result.hanCount;
         }
       }

@@ -32,12 +32,9 @@ class Players : boost::noncopyable {
     selfView.SetSelectTiMode(action, tiList);
   }
 
-  void ResetSelectKanMode() {
-    selfView.ResetSelectKanMode();
-  }
-
-  void ResetSelectTiMode() {
-    selfView.ResetSelectTiMode();
+  template <typename Action>
+  void SetSelectReachMode(std::uint32_t reachIndex, Action action) {
+    selfView.SetSelectReachMode(reachIndex, action);
   }
 
   template <typename Action>

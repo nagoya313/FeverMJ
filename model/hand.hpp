@@ -117,6 +117,7 @@ class Hand {
   }
 
   void EraseNorth() {
+    assert(kind[Pai::North]);
     --kind[Pai::North];
     if (tumo != Pai::North) {
       hand.erase(boost::equal_range(hand, Pai::North).first);
@@ -202,7 +203,7 @@ class Hand {
     return false;
   }
 
-  std::vector<std::pair<Pai, Pai>> GetTiCandidate(Pai pai) const {
+  std::vector<TiPair> GetTiCandidate(Pai pai) const {
     assert(pai != Pai::Invalid);
     std::vector<std::pair<Pai, Pai>> tiCandidate;
     if (pai >= Pai::P1 && pai <= Pai::S9) {
@@ -216,6 +217,38 @@ class Hand {
   void CheckTenpai() {
     waitPais = Model::GetWaitPai(kind, hand.size() == 13, tenpais);
     FEVERMJ_LOG("wait kind:%d\n", tenpais.size());
+  }
+
+  std::vector<std::vector<RoleHand>> GetReachPatern() const {
+    const int size = hand.size();
+    std::vector<std::vector<RoleHand>> patern;
+    std::vector<RoleHand> t;
+    Pai beforePai = Pai::Invalid;
+    std::uint32_t beforeWait = 0;
+    for (int i = 0; i < size; ++i) {
+      if (hand[i] == beforePai && beforeWait) {
+        patern.push_back(t);
+      } else {
+        t.clear();
+        --kind[hand[i]];
+        if ((beforeWait = Model::GetWaitPai(kind, size == 13, t))) {
+          FEVERMJ_LOG("reach kind:%d\n", t.size());
+          patern.push_back(t);
+        } else {
+          patern.push_back({});
+        }
+        ++kind[hand[i]];
+      } 
+    }
+    t.clear();
+    --kind[tumo];
+    if ((beforeWait = Model::GetWaitPai(kind, size == 13, t))) {
+      patern.push_back(t);
+    } else {
+      patern.push_back({});
+    }
+    ++kind[tumo];
+    return patern;
   }
   
   std::uint32_t GetWaitPais() const {

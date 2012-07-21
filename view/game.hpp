@@ -7,6 +7,7 @@
 #include "first_parent.hpp"
 #include "mat.hpp"
 #include "players.hpp"
+#include "reach.hpp"
 #include "squeal.hpp"
 #include "status.hpp"
 #include "../controller/input.hpp"
@@ -19,18 +20,17 @@
 namespace FeverMJ { namespace View {
 class Game : boost::noncopyable {
  public:
-  void Draw(const Controller::Input &input,
-            const Model::Field &field,
-            const Model::Players &players,
-            const Utility::PaiImage &paiImage) {
+  void Draw(const Controller::Input &input, const Model::Field &field, const Model::Players &players, const Utility::PaiImage &paiImage) {
     ClearDrawScreen();
     matView.Draw();
     doraMaountainView.Draw(field, paiImage);
     firstParentView.Draw(field, paiImage);
     breakHouseView.Draw(field, paiImage);
+    reachView.Draw(players, paiImage);
     playersView.Draw(input, field, players, paiImage);
     squealView.Draw(input);
     statusView.Draw(field, players, input);
+    notSquealButton.Update(input);
     ScreenFlip();
   }
 
@@ -51,12 +51,10 @@ class Game : boost::noncopyable {
     playersView.SetSelectTiMode(action, tiList);
   }
 
-  void ResetSelectKanMode() {
-    playersView.ResetSelectKanMode();
-  }
-
-  void ResetSelectTiMode() {
-    playersView.ResetSelectTiMode();
+  template <typename Action>
+  void SetSelectReachMode(std::uint32_t reachIndex, Action action) {
+    squealView.AllReset();
+    playersView.SetSelectReachMode(reachIndex, action);
   }
 
   template <typename Action>
@@ -74,21 +72,29 @@ class Game : boost::noncopyable {
     squealView.AllReset();
     statusView.SetFlowSet(action, variationPoints);
     playersView.SetFlowSet();
+    notSquealButton.SetHide(true);
   }
 
   template <typename Action>
   void SetSelectTumo(Action action, const Model::Point &point, const std::array<int, 3> &variationPoints) {
     statusView.SetSelectTumo(action, point, variationPoints);
+    notSquealButton.SetHide(true);
   }
 
   template <typename Action>
   void SetSelectRon(Action action, const Model::Point &point, const std::array<int, 3> &variationPoints) {
     statusView.SetSelectRon(action, point, variationPoints);
+    notSquealButton.SetHide(true);
   }
 
   void SetStart() {
     statusView.SetStart();
     playersView.SetStart();
+    notSquealButton.SetHide(false);
+  }
+
+  bool NotSquealButtonIsToggle() const {
+    return notSquealButton.IsToggle();
   }
 
  private:
@@ -98,7 +104,9 @@ class Game : boost::noncopyable {
   BreakHouse breakHouseView;
   Status statusView;
   Players playersView;
+  Reach reachView;
   Squeal squealView;
+  View::ToggleButton notSquealButton{550, 440, "–Â‚©‚È‚¢"};
 };
 }}
 

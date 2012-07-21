@@ -134,7 +134,7 @@ class Player {
     return RinsyanTumo(field);
   }
 
-  std::vector<std::pair<Pai, Pai>> GetTiCandidate(Pai pai) const {
+  std::vector<TiPair> GetTiCandidate(Pai pai) const {
     assert(pai != Pai::Invalid);
     return hand.GetTiCandidate(pai);
   }
@@ -225,6 +225,7 @@ class Player {
     return point;
   }
 
+  // TODO:Point‚ğ•Ô‚µ‚Äƒhƒ‰‚ğ”‚¦‚é
   bool IsLimitHandSink() const {
     if (squealedList.empty()) {
       for (const int pai : riverList) {
@@ -239,6 +240,32 @@ class Player {
 
   bool IsTenpai() const {
     return hand.GetWaitPais();
+  }
+
+  std::uint32_t GetReachEnableIndex() const {
+    if (playerState.IsMenzen()) {
+      const auto patern = hand.GetReachPatern();
+      std::uint32_t index = 0x0;
+      int i = 0;
+      for (const auto &p : patern) {
+        if (!p.empty()) {
+          if (i < hand.GetHandSize()) {
+            index |= 1 << i;
+          } else {
+            index |= 1 << 14;
+          }
+        }
+        ++i;
+      }
+      return index;
+    }
+    return 0x0;
+  }
+
+  void SetReach() {
+    playerState.SetReach();
+    *std::prev(riverList.end()) += squealOffset;
+    point -= 1000;
   }
 
  private:
