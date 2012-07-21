@@ -288,8 +288,8 @@ std::uint32_t GetKokusiMusoWaitPais(std::uint32_t paiKindBits) {
   if (paiKindBits == RoleBits::OldHead) {
     return RoleBits::OldHead;
   }
-  int mati = 0;
-  if (!(paiKindBits &= ~RoleBits::OldHead)) {
+  std::uint32_t mati = 0x0;
+  if (!(paiKindBits & ~RoleBits::OldHead)) {
     const std::uint32_t find = (paiKindBits & RoleBits::OldHead) ^ RoleBits::OldHead;
     for (int i = 0; i < paiKindMax; ++i) {
       if (find & (1 << i)) {
@@ -396,7 +396,7 @@ std::uint32_t GetWaitPai(PaiKindArray &kind, bool isHandCount13, std::vector<Rol
       }
     }
   }
-  if (isHandCount13) {  
+  if (isHandCount13) {
     if ((waitPaiBits = GetKokusiMusoWaitPais(paiKindBits))) {
       RoleHand kokusi;
       kokusi.SetKokusiMuso(waitPaiBits);

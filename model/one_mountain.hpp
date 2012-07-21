@@ -30,13 +30,20 @@ class OneMountain {
   }
 
   Pai GetDisplayDora(int i) const {
-    return i < GetDoraCount() ? mountain[8 - 2 * i] : Pai::Invalid;
+    return i < GetDoraCount() ? mountain[10 - 2 * i] : Pai::Invalid;
+  }
+
+  Pai GetDisplayReverceDora(int i) const {
+    return i < GetDoraCount() ? mountain[10 - (2 * i + 1)] : Pai::Invalid;
   }
 
   std::vector<Pai> GetDoraList(bool withReverse) const {
     std::vector<Pai> doraList = {Pai::M1, Pai::M9, Pai::North};
     for (int i = 0; i < GetDoraCount(); ++i) {
       doraList.push_back(GetDora(GetDisplayDora(i)));
+      if (withReverse) {
+        doraList.push_back(GetDora(GetDisplayReverceDora(i)));
+      }
     }
     return doraList;
   }
