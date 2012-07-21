@@ -24,8 +24,10 @@ class Players {
                                        //{Pai::P3, Pai::P3, Pai::P4, Pai::P4, Pai::P5, Pai::P5, Pai::P6, Pai::P6, Pai::P7, Pai::P7, Pai::P8, Pai::East, Pai::East},
                                        //{Pai::P1, Pai::P1, Pai::P1, Pai::P2, Pai::P2, Pai::P3, Pai::P3, Pai::P3, Pai::P7, Pai::P8, Pai::P9, Pai::East, Pai::East},
                                        //{Pai::M9, Pai::M9, Pai::S1, Pai::S1, Pai::S1, Pai::S2, Pai::S3, Pai::S4, Pai::S4, Pai::S5, Pai::S6, Pai::S7, Pai::S8},
-                                       {Pai::M9, Pai::M9, Pai::P1, Pai::P9, Pai::S1, Pai::S9, Pai::East, Pai::South, Pai::West, Pai::North, Pai::White, Pai::From, Pai::Center},
-                                       //field.GetFirstPais(),
+                                       //{Pai::M9, Pai::M9, Pai::P1, Pai::P9, Pai::S1, Pai::S9, Pai::East, Pai::South, Pai::West, Pai::North, Pai::White, Pai::From, Pai::Center},
+                                       //{Pai::M1, Pai::M1, Pai::P3, Pai::P4, Pai::P5, Pai::P5, Pai::P6, Pai::P7, Pai::P8, Pai::P9, Pai::S3, Pai::S4, Pai::S5},
+                                       //{Pai::P1, Pai::P1, Pai::P1, Pai::P4, Pai::P5, Pai::P6, Pai::S1, Pai::S2, Pai::S3, Pai::S6, Pai::S7, Pai::Center, Pai::Center},
+                                       field.GetFirstPais(),
                                        GetStartWind(field, Wind::South));
     players[House::Down].GameStartInit(field.GetFirstPais(), GetStartWind(field, Wind::West));
   }
@@ -40,8 +42,7 @@ class Players {
     return players[Model::House::Up].GetPoint() < 0 || players[Model::House::Self].GetPoint() < 0 || players[Model::House::Down].GetPoint() < 0;
   }
 
-  std::array<int, 3> GetTumoPoint(House house, const Point &point, const Field &field) {
-    std::array<int, 3> variationPoints;
+  void SetTumoPoint(House house, const Point &point, const Field &field) {
     int getPoint = 0;
     House payHouse = GetDownHouse(house);
     for (int i = 0; i < 2; ++i) {
@@ -50,24 +51,23 @@ class Players {
                            -point.GetChildTumoParentPoint(isBreak) :
                            -point.GetChildTumoChildPoint(isBreak);
       players[payHouse].AddPoint(payPoint);
-      variationPoints[payHouse] = payPoint;
       getPoint += -payPoint;
       payHouse = GetDownHouse(payHouse);
     }
     players[house].AddPoint(getPoint);
-    variationPoints[house] = getPoint;
-    return variationPoints;
   }
 
-  std::array<int, 3> GetRonPoint(House house, House payHouse, const Point &point, const Field &field) {
-    std::array<int, 3> variationPoints = {{0, 0, 0}};
+  void SetRonPoint(House house, House payHouse, const Point &point, const Field &field) {
     const bool isBreak = field.GetBreakHouse() == payHouse || field.GetBreakHouse() == house;
     const int getPoint = players[house].IsParent() ?  point.GetParentRonPoint(isBreak) : point.GetChildRonPoint(isBreak);
     players[house].AddPoint(getPoint);
-    variationPoints[house] = getPoint;
     players[payHouse].AddPoint(-getPoint);
-    variationPoints[payHouse] = -getPoint;
-    return variationPoints;
+  }
+
+  void SetFlowPoint() {
+    for (auto &player : players) {
+      player.AddPoint(0);
+    }
   }
 
   Pai TumoCut(House house) {

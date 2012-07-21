@@ -233,7 +233,7 @@ void CheckTanyaoBitsRole(std::uint32_t paiKindBits, RoleResult &result) {
   if (!(paiKindBits & ~RoleBits::Tanyao)) {
     result.roleBits |= Role::Tanyao;
     ++result.hanCount;
-  } else if (!(paiKindBits & ~RoleBits::OldHead)) {
+  } else if (!(paiKindBits & ~RoleBits::OldHead) && paiKindBits != RoleBits::OldHead) {
     result.roleBits |= Role::OldHead;
     result.hanCount += 2;
   } else if (!(paiKindBits & ~RoleBits::PureOldHead)) {

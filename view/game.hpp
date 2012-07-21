@@ -8,6 +8,7 @@
 #include "mat.hpp"
 #include "players.hpp"
 #include "reach.hpp"
+#include "result.hpp"
 #include "squeal.hpp"
 #include "status.hpp"
 #include "../controller/input.hpp"
@@ -29,7 +30,8 @@ class Game : boost::noncopyable {
     reachView.Draw(players, paiImage);
     playersView.Draw(input, field, players, paiImage);
     squealView.Draw(input);
-    statusView.Draw(field, players, input);
+    statusView.Draw(field, players);
+    resultView.Draw(field, players, input);
     notSquealButton.Update(input);
     ScreenFlip();
   }
@@ -70,25 +72,29 @@ class Game : boost::noncopyable {
   template <typename Action>
   void SetFlowSet(Action action, const std::array<int, 3> &variationPoints) {
     squealView.AllReset();
-    statusView.SetFlowSet(action, variationPoints);
+    statusView.SetResult(true);
+    resultView.SetFlowSet(action);
     playersView.SetFlowSet();
     notSquealButton.SetHide(true);
   }
 
   template <typename Action>
-  void SetSelectTumo(Action action, const Model::Point &point, const std::array<int, 3> &variationPoints) {
-    statusView.SetSelectTumo(action, point, variationPoints);
+  void SetSelectTumo(Action action, const Model::Point &point, Model::House goalHouse) {
+    statusView.SetResult(true);
+    resultView.SetSelectTumo(action, point, goalHouse);
     notSquealButton.SetHide(true);
   }
 
   template <typename Action>
-  void SetSelectRon(Action action, const Model::Point &point, const std::array<int, 3> &variationPoints) {
-    statusView.SetSelectRon(action, point, variationPoints);
+  void SetSelectRon(Action action, const Model::Point &point, Model::House goalHouse) {
+    statusView.SetResult(true);
+    resultView.SetSelectRon(action, point, goalHouse);
     notSquealButton.SetHide(true);
   }
 
   void SetStart() {
-    statusView.SetStart();
+    statusView.SetResult(false);
+    resultView.SetStart();
     playersView.SetStart();
     notSquealButton.SetHide(false);
   }
@@ -103,6 +109,7 @@ class Game : boost::noncopyable {
   FirstParent firstParentView;
   BreakHouse breakHouseView;
   Status statusView;
+  Result resultView;
   Players playersView;
   Reach reachView;
   Squeal squealView;

@@ -70,7 +70,7 @@ class Point {
       return 4000;
     } else if (han >= 6) {
       return 3000;
-    } else if (han >= 5 || (han >=4 && hu >= 40) || (han >= 3 && hu >= 80)) {
+    } else if (han >= 5 || (han >=4 && hu >= 30) || (han >= 3 && hu >= 60)) {
       return 2000;
     } else {
       return hu * std::pow(2, han + 2);

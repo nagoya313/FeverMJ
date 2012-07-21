@@ -20,68 +20,6 @@ void EraseTriple(PaiKindArray &kind, RoleHand &hand) {
 }
 
 inline
-void ForceEraseStraight(PaiKindArray &kind, RoleHand &hand) {
-  for (int i = Pai::P1; i < Pai::S8; ++i) {
-    if (kind[i] && GetNumber(i) < 7) {
-      for (int j = 4; j > 0; --j) {
-        if (kind[i] >= j) {
-          if (kind[i + 1] >= j && kind[i + 2] >= j) {
-            kind[i] -= j;
-            kind[i + 1] -= j;
-            kind[i + 2] -= j;
-            for (int k  = 0; k < j; ++k) {
-              hand.AddStraight(static_cast<Pai>(i));
-            }
-          } else {
-            break;
-          }
-        }
-      }
-    }
-  }
-}
-
-inline
-void EraseStraight(PaiKindArray &kind, RoleHand &hand) {
-  for (int i = Pai::P1; i < Pai::S8; ++i) {
-    if (kind[i] && GetNumber(i) < 7) {
-      for (int j = 4; j > 0; --j) {
-        if (kind[i] >= j) {
-          if (kind[i + 1] >= j && kind[i + 2] >= j) {
-            kind[i] -= j;
-            kind[i + 1] -= j;
-            kind[i + 2] -= j;
-            for (int k = 0; k < j; ++k) {
-              hand.AddStraight(static_cast<Pai>(i));
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-inline
-void EraseReverseStraight(PaiKindArray &kind, RoleHand &hand) {
-  for (int i = Pai::S9; i >= Pai::P3; --i) {
-    if (kind[i] && GetNumber(i) > 1) {
-      for (int j = 4; j > 0; --j) {
-        if (kind[i] >= j) {
-          if (kind[i - 1] >= j && kind[i - 2] >= j) {
-            kind[i] -= j;
-            kind[i - 1] -= j;
-            kind[i - 2] -= j;
-            for (int k = 0; k < j; ++k) {
-              hand.AddStraight(static_cast<Pai>(i - 2));
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-inline
 bool ErasedStraight(PaiKindArray &kind, RoleHand &hand) {
   for (int i = Pai::P1; i < Pai::S8; ++i) {
     if (kind[i] && GetNumber(i) < 7) {
@@ -105,182 +43,8 @@ bool ErasedStraight(PaiKindArray &kind, RoleHand &hand) {
 }
 
 inline
-bool IsStraightEnablePai(Pai pai) {
+bool IsStraightEnablePai(int pai) {
   return pai >= Pai::P1 && pai <= Pai::S9;
-}
-
-inline
-std::uint32_t GetStraightWaitPais(const std::array<Pai, 2> &waitPais, RoleHand &hand) {
-  assert(waitPais[1] >= waitPais[0]);
-  assert(waitPais[0] != Pai::Invalid);
-  assert(waitPais[1] != Pai::Invalid);
-  if (IsSameColor(waitPais[0], waitPais[1]) && IsStraightEnablePai(waitPais[0]) && IsStraightEnablePai(waitPais[1])) {
-    if (waitPais[1] - waitPais[0] == 1) {
-      if (GetNumber(waitPais[0]) > 0 && GetNumber(waitPais[1]) < 8) {
-        hand.SetBothSideWait(static_cast<Pai>(waitPais[0] - 1));
-        return 1 << (waitPais[0] - 1) | 1 << (waitPais[1] + 1);
-      } else {
-        hand.SetSingleSideWait(!GetNumber(waitPais[0]) ?
-                               static_cast<Pai>(waitPais[0] + 2) :
-                               static_cast<Pai>(waitPais[0] - 1));
-        return 1 << (!GetNumber(waitPais[0]) ? waitPais[0] + 2 : waitPais[0] - 1);
-      }
-    } else if (waitPais[1] - waitPais[0] == 2) {
-      hand.SetBetweenWait(static_cast<Pai>(waitPais[0] + 1));
-      return 1 << (waitPais[0] + 1);
-    }
-  }
-  return 0x0;
-}
-
-inline
-std::uint32_t GetWaitPai(const PaiKindArray &kind, RoleHand &hand, std::vector<RoleHand> &tenpais) {
-  std::array<Pai, 2> waitPais = {{Pai::Invalid, Pai::Invalid}};
-  int count = 0;
-  for (int i = 0; i < paiKindMax; ++i) {
-    for (int j = 0; j < kind[i]; ++j) {
-      waitPais[count++] = static_cast<Pai>(i);
-      if (count > 2) {
-        return 0x0;
-      }
-    }
-  }
-  assert(count == 2);
-  if (const std::uint32_t straightWaitPais = GetStraightWaitPais(waitPais, hand)) {
-    tenpais.push_back(hand);
-    return straightWaitPais;
-  }
-  if (waitPais[0] == waitPais[1]) {
-    hand.SetDoubleHeadWait(waitPais[0]);
-    tenpais.push_back(hand);
-    return 1 << waitPais[0];
-  }
-  return 0x0;
-}
-
-inline
-std::uint32_t GetHighPriorityTripleForseEraseWaitPai(Pai head, PaiKindArray kind, std::vector<RoleHand> &tenpais) {
-  RoleHand hand;
-  hand.SetHead(head);
-  EraseTriple(kind, hand);
-  ForceEraseStraight(kind, hand);
-  return GetWaitPai(kind, hand, tenpais);
-}
-
-inline
-std::uint32_t GetHighPriorityStraightForseEraseWaitPai(Pai head, PaiKindArray kind, std::vector<RoleHand> &tenpais) {
-  RoleHand hand;
-  hand.SetHead(head);
-  ForceEraseStraight(kind, hand);
-  EraseTriple(kind, hand);
-  return GetWaitPai(kind, hand, tenpais);
-}
-
-inline
-std::uint32_t GetStraightOnlyForseEraseWaitPai(Pai head, PaiKindArray kind, std::vector<RoleHand> &tenpais) {
-  RoleHand hand;
-  hand.SetHead(head);
-  ForceEraseStraight(kind, hand);
-  return GetWaitPai(kind, hand, tenpais);
-}
-
-inline
-std::uint32_t GetHighPriorityTripleWaitPai(Pai head, PaiKindArray kind, std::vector<RoleHand> &tenpais) {
-  RoleHand hand;
-  hand.SetHead(head);
-  EraseTriple(kind, hand);
-  EraseStraight(kind, hand);
-  return GetWaitPai(kind, hand, tenpais);
-}
-
-inline
-std::uint32_t GetHighPriorityStraightWaitPai(Pai head, PaiKindArray kind, std::vector<RoleHand> &tenpais) {
-  RoleHand hand;
-  hand.SetHead(head);
-  EraseStraight(kind, hand);
-  EraseTriple(kind, hand);
-  return GetWaitPai(kind, hand, tenpais);
-}
-
-inline
-std::uint32_t GetHighPriorityTripleReverseWaitPai(Pai head, PaiKindArray kind, std::vector<RoleHand> &tenpais) {
-  RoleHand hand;
-  hand.SetHead(head);
-  EraseTriple(kind, hand);
-  EraseReverseStraight(kind, hand);
-  return GetWaitPai(kind, hand, tenpais);
-}
-
-inline
-std::uint32_t GetHighPriorityStraightReverseWaitPai(Pai head, PaiKindArray kind, std::vector<RoleHand> &tenpais) {
-  RoleHand hand;
-  hand.SetHead(head);
-  EraseReverseStraight(kind, hand);
-  EraseTriple(kind, hand);
-  return GetWaitPai(kind, hand, tenpais);
-}
-
-inline
-std::uint32_t GetStraightOnlyWaitPai(Pai head, PaiKindArray kind, std::vector<RoleHand> &tenpais) {
-  RoleHand hand;
-  hand.SetHead(head);
-  EraseStraight(kind, hand);
-  return GetWaitPai(kind, hand, tenpais);
-}
-
-inline
-std::uint32_t GetStraightOnlyReverseWaitPai(Pai head, PaiKindArray kind, std::vector<RoleHand> &tenpais) {
-  RoleHand hand;
-  hand.SetHead(head);
-  EraseReverseStraight(kind, hand);
-  return GetWaitPai(kind, hand, tenpais);
-}
-
-inline
-std::uint32_t GetTenpaiHighPriorityTripleWithoutHead(Pai head, PaiKindArray kind, std::vector<RoleHand> &tenpais) {
-  RoleHand hand;
-  hand.SetHead(head);
-  EraseTriple(kind, hand);
-  if (!ErasedStraight(kind, hand)) {
-    return 0x0;
-  }
-  if (boost::all_of(kind, [](int i) {return !i;})) {
-    hand.SetSingleWait(head);
-    tenpais.push_back(hand);
-    return 1 << head;
-  }
-  return 0x0;
-}
-
-inline
-std::uint32_t GetTenpaiHighPriorityStraightWithoutHead(Pai head, PaiKindArray kind, std::vector<RoleHand> &tenpais) {
-  RoleHand hand;
-  hand.SetHead(head);
-  if (!ErasedStraight(kind, hand)) {
-    return 0x0;
-  }
-  EraseTriple(kind, hand);
-  if (boost::all_of(kind, [](int i) {return !i;})) {
-    hand.SetSingleWait(head);
-    tenpais.push_back(hand);
-    return 1 << head;
-  }
-  return 0x0;
-}
-
-inline
-std::uint32_t GetTenpaiStraightOnlyWithoutHead(Pai head, PaiKindArray kind, std::vector<RoleHand> &tenpais) {
-  RoleHand hand;
-  hand.SetHead(head);
-  if (!ErasedStraight(kind, hand)) {
-    return 0x0;
-  } 
-  if (boost::all_of(kind, [](int i) {return !i;})) {
-    hand.SetSingleWait(head);
-    tenpais.push_back(hand);
-    return 1 << head;
-  }
-  return 0x0;
 }
 
 inline
@@ -324,14 +88,105 @@ std::uint32_t GetSevenDoubleWaitPais(const PaiKindArray &kind) {
   return 1 << mati;
 }
 
+template <typename Erase, typename Wait>
+std::uint32_t GetTenpai(Erase erase, Wait wait, Pai head, PaiKindArray kind, std::vector<RoleHand> &tenpais) {
+  RoleHand hand;
+  hand.SetHead(head);
+  if (!erase(kind, hand)) {
+    return 0x0;
+  }
+  if (boost::all_of(kind, [](int i) {return !i;})) {
+    const auto waitBits = wait(hand);
+    tenpais.push_back(hand);
+    return waitBits;
+  }
+  return 0x0;
+}
+
+const auto EraseHighPriorityTriple = [](PaiKindArray &kind, RoleHand &hand) {
+  EraseTriple(kind, hand);
+  return ErasedStraight(kind, hand);
+};
+
+const auto EraseHighPriorityStraight = [](PaiKindArray &kind, RoleHand &hand) {
+  if (!ErasedStraight(kind, hand)) {
+    return false;
+  }
+  EraseTriple(kind, hand);
+  return true;
+};
+
+const auto EraseStraightOnly = [](PaiKindArray &kind, RoleHand &hand) {
+  return ErasedStraight(kind, hand);
+};
+
+template <typename Erase>
+std::uint32_t GetTenpaiSingle(Erase erase, Pai head, PaiKindArray &kind, std::vector<RoleHand> &tenpais) {
+  return GetTenpai(erase, [head](RoleHand &hand) {
+    hand.SetSingleWait(head);
+    return 1 << head;
+  }, head, kind, tenpais);
+}
+
+template <typename Erase>
+std::uint32_t GetTenpaiBetween(Erase erase, Pai head, Pai wait, PaiKindArray &kind, std::vector<RoleHand> &tenpais) {
+  return GetTenpai(erase, [wait](RoleHand &hand) {
+    hand.SetBetweenWait(wait);
+    return 1 << wait;
+  }, head, kind, tenpais);
+}
+
+template <typename Erase>
+std::uint32_t GetTenpaiSingleSide(Erase erase, Pai head, Pai wait, PaiKindArray &kind, std::vector<RoleHand> &tenpais) {
+  return GetTenpai(erase, [wait](RoleHand &hand) {
+    hand.SetSingleSideWait(wait);
+    return 1 << wait;
+  }, head, kind, tenpais);
+}
+
+template <typename Erase>
+std::uint32_t GetTenpaiBothSide(Erase erase, Pai head, Pai wait, PaiKindArray &kind, std::vector<RoleHand> &tenpais) {
+  return GetTenpai(erase, [wait](RoleHand &hand) {
+    hand.SetBothSideWait(wait);
+    return 1 << wait | 1 << (wait + 3);
+  }, head, kind, tenpais);
+}
+
+template <typename Erase>
+std::uint32_t GetTenpaiDoubleHead(Erase erase, Pai head, Pai wait, PaiKindArray &kind, std::vector<RoleHand> &tenpais) {
+  return GetTenpai(erase, [wait](RoleHand &hand) {
+    hand.SetDoubleHeadWait(wait);
+    return 1 << wait;
+  }, head, kind, tenpais);
+}
+
 inline
 std::uint32_t GetEnableSevenDoubleWaitPai(PaiKindArray &kind, std::vector<RoleHand> &tenpais) {
   std::uint32_t waitPaiBits = 0x0;
   for (int i = 0; i < paiKindMax; ++i) {
     if (kind[i] >= 2) {
       kind[i] -= 2;
-      waitPaiBits |= GetStraightOnlyWaitPai(static_cast<Pai>(i), kind, tenpais);
-      waitPaiBits |= GetStraightOnlyReverseWaitPai(static_cast<Pai>(i), kind, tenpais);
+      for (int j = 0; j < paiKindMax; ++j) {
+        if (IsSameColor(j, j + 2) && IsStraightEnablePai(j) && kind[j] && kind[j + 2]) {
+          --kind[j];
+          --kind[j + 2];
+          waitPaiBits |= GetTenpaiBetween(EraseStraightOnly, static_cast<Pai>(i), static_cast<Pai>(j + 1), kind, tenpais);
+          ++kind[j];
+          ++kind[j + 2];
+        }
+        if (IsSameColor(j, j + 1) && IsStraightEnablePai(j) && kind[j] && kind[j + 1]) {
+          --kind[j];
+          --kind[j + 1];
+          if (GetNumber(j) > 0 && GetNumber(j + 1) < 8) {
+            waitPaiBits |= GetTenpaiBothSide(EraseStraightOnly, static_cast<Pai>(i), static_cast<Pai>(j - 1), kind, tenpais);
+          } else {
+            const Pai wait = !GetNumber(j) ? static_cast<Pai>(j + 2) : static_cast<Pai>(j - 1);
+            waitPaiBits |= GetTenpaiSingleSide(EraseStraightOnly, static_cast<Pai>(i), wait, kind, tenpais);
+          }
+          ++kind[j];
+          ++kind[j + 1];
+        }
+      }
       kind[i] += 2;
     }
   }
@@ -344,18 +199,42 @@ std::uint32_t GetHasTripleWaitPai(PaiKindArray &kind, std::vector<RoleHand> &ten
   for (int i = 0; i < paiKindMax; ++i) {
     if (kind[i] >= 2) {
       kind[i] -= 2;
-      waitPaiBits |= GetHighPriorityTripleForseEraseWaitPai(static_cast<Pai>(i), kind, tenpais);
-      waitPaiBits |= GetHighPriorityStraightForseEraseWaitPai(static_cast<Pai>(i), kind, tenpais);
-      waitPaiBits |= GetHighPriorityTripleWaitPai(static_cast<Pai>(i), kind, tenpais);
-      waitPaiBits |= GetHighPriorityStraightWaitPai(static_cast<Pai>(i), kind, tenpais);
-      waitPaiBits |= GetHighPriorityTripleReverseWaitPai(static_cast<Pai>(i), kind, tenpais);
-      waitPaiBits |= GetHighPriorityStraightReverseWaitPai(static_cast<Pai>(i), kind, tenpais);
+      for (int j = 0; j < paiKindMax; ++j) {
+        if (IsSameColor(j, j + 2) && IsStraightEnablePai(j) && kind[j] && kind[j + 2]) {
+          --kind[j];
+          --kind[j + 2];
+          waitPaiBits |= GetTenpaiBetween(EraseHighPriorityTriple, static_cast<Pai>(i), static_cast<Pai>(j + 1), kind, tenpais);
+          waitPaiBits |= GetTenpaiBetween(EraseHighPriorityStraight, static_cast<Pai>(i), static_cast<Pai>(j + 1), kind, tenpais);
+          ++kind[j];
+          ++kind[j + 2];
+        }
+        if (IsSameColor(j, j + 1) && IsStraightEnablePai(j) && kind[j] && kind[j + 1]) {
+          --kind[j];
+          --kind[j + 1];
+          if (GetNumber(j) > 0 && GetNumber(j + 1) < 8) {
+            waitPaiBits |= GetTenpaiBothSide(EraseHighPriorityTriple, static_cast<Pai>(i), static_cast<Pai>(j - 1), kind, tenpais);
+            waitPaiBits |= GetTenpaiBothSide(EraseHighPriorityStraight, static_cast<Pai>(i), static_cast<Pai>(j - 1), kind, tenpais);
+          } else {
+            const Pai wait = !GetNumber(j) ? static_cast<Pai>(j + 2) : static_cast<Pai>(j - 1);
+            waitPaiBits |= GetTenpaiSingleSide(EraseHighPriorityTriple, static_cast<Pai>(i), wait, kind, tenpais);
+            waitPaiBits |= GetTenpaiSingleSide(EraseHighPriorityStraight, static_cast<Pai>(i), wait, kind, tenpais);
+          }
+          ++kind[j];
+          ++kind[j + 1];
+        }
+        if (kind[j] >= 2) {
+          kind[j] -= 2;
+          waitPaiBits |= GetTenpaiDoubleHead(EraseHighPriorityTriple, static_cast<Pai>(i), static_cast<Pai>(j), kind, tenpais);
+          waitPaiBits |= GetTenpaiDoubleHead(EraseHighPriorityStraight, static_cast<Pai>(i), static_cast<Pai>(j), kind, tenpais);
+          kind[j] += 2;
+        }
+      }
       kind[i] += 2;
     }
     if (kind[i] >= 1) {
       --kind[i];
-      waitPaiBits |= GetTenpaiHighPriorityTripleWithoutHead(static_cast<Pai>(i), kind, tenpais);
-      waitPaiBits |= GetTenpaiHighPriorityStraightWithoutHead(static_cast<Pai>(i), kind, tenpais);
+      waitPaiBits |= GetTenpaiSingle(EraseHighPriorityTriple, static_cast<Pai>(i), kind, tenpais);
+      waitPaiBits |= GetTenpaiSingle(EraseHighPriorityStraight, static_cast<Pai>(i), kind, tenpais);
       ++kind[i];
     }
   }
@@ -368,14 +247,37 @@ std::uint32_t GetNotHasTripleWaitPai(PaiKindArray &kind, std::vector<RoleHand> &
   for (int i = 0; i < paiKindMax; ++i) {
     if (kind[i] >= 2) {
       kind[i] -= 2;
-      waitPaiBits |= GetStraightOnlyForseEraseWaitPai(static_cast<Pai>(i), kind, tenpais);
-      waitPaiBits |= GetStraightOnlyWaitPai(static_cast<Pai>(i), kind, tenpais);
-      waitPaiBits |= GetStraightOnlyReverseWaitPai(static_cast<Pai>(i), kind, tenpais);
+      for (int j = 0; j < paiKindMax; ++j) {
+        if (IsSameColor(j, j + 2) && IsStraightEnablePai(j) && kind[j] && kind[j + 2]) {
+          --kind[j];
+          --kind[j + 2];
+          waitPaiBits |= GetTenpaiBetween(EraseStraightOnly, static_cast<Pai>(i), static_cast<Pai>(j + 1), kind, tenpais);
+          ++kind[j];
+          ++kind[j + 2];
+        }
+        if (IsSameColor(j, j + 1) && IsStraightEnablePai(j) && kind[j] && kind[j + 1]) {
+          --kind[j];
+          --kind[j + 1];
+          if (GetNumber(j) > 0 && GetNumber(j + 1) < 8) {
+            waitPaiBits |= GetTenpaiBothSide(EraseStraightOnly, static_cast<Pai>(i), static_cast<Pai>(j - 1), kind, tenpais);
+          } else {
+            const Pai wait = !GetNumber(j) ? static_cast<Pai>(j + 2) : static_cast<Pai>(j - 1);
+            waitPaiBits |= GetTenpaiSingleSide(EraseStraightOnly, static_cast<Pai>(i), wait, kind, tenpais);
+          }
+          ++kind[j];
+          ++kind[j + 1];
+        }
+        if (kind[j] >= 2) {
+          kind[j] -= 2;
+          waitPaiBits |= GetTenpaiDoubleHead(EraseStraightOnly, static_cast<Pai>(i), static_cast<Pai>(j), kind, tenpais);
+          kind[j] += 2;
+        }
+      }
       kind[i] += 2;
     }
     if (kind[i] >= 1) {
       --kind[i];
-      waitPaiBits |= GetTenpaiStraightOnlyWithoutHead(static_cast<Pai>(i), kind, tenpais);
+      waitPaiBits |= GetTenpaiSingle(EraseStraightOnly, static_cast<Pai>(i), kind, tenpais);
       ++kind[i];
     }
   }

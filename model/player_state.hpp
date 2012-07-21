@@ -13,6 +13,14 @@ class PlayerState {
     state |= Reach | ReachFirstTumo;
   }
 
+  void SetDoubleReach() {
+    state |= DoubleReach | ReachFirstTumo;
+  }
+
+  void SetFirst() {
+    state |= ReachFirstTumo;
+  }
+
   void Squeal() {
     state &= ~Menzen;
   }
@@ -40,9 +48,9 @@ class PlayerState {
   bool IsMenzen() const {
     return state & Menzen;
   }
-  
-  bool IsSilentTenpai() const {
-    return !((state & Reach) || (state & DoubleReach));
+
+  bool IsReachTenpai() const {
+    return (state & Reach) || (state & DoubleReach);
   }
   
   bool IsReach() const {

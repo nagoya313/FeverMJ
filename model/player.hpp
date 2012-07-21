@@ -16,7 +16,7 @@ namespace FeverMJ { namespace Model {
 class Player {
  public:
   void GameStartInit(std::vector<Pai> &&firstPai, Wind wind) {
-    point = 25000;
+    beforePoint = point = 25000;
     Init(std::move(firstPai), wind);
   }
 
@@ -218,11 +218,20 @@ class Player {
   }
 
   void AddPoint(int p) {
+    beforePoint = point;
     point += p;
+  }
+
+  int GetBeforePoint() const {
+    return beforePoint;
   }
 
   int GetPoint() const {
     return point;
+  }
+
+  int GetDiffPoint() const {
+    return point - beforePoint;
   }
 
   // TODO:Point‚ğ•Ô‚µ‚Äƒhƒ‰‚ğ”‚¦‚é
@@ -263,9 +272,18 @@ class Player {
   }
 
   void SetReach() {
-    playerState.SetReach();
-    *std::prev(riverList.end()) += squealOffset;
+    if (playerState.IsFirstTumo()) {
+      playerState.SetDoubleReach();
+    } else {
+      playerState.SetReach();
+    }
     point -= 1000;
+  }
+
+  void SetReachRiver() {
+    *std::prev(riverList.end()) += squealOffset;
+    // ‚±‚±‚É‘‚­‚Ì‚Í‰˜‚¢
+    playerState.SetFirst();
   }
 
  private:
@@ -326,7 +344,9 @@ class Player {
 
   Point Tumo(Pai pai, const Field &field) {
     assert(pai != Pai::Invalid);
-    furitenList.clear();
+    if (!playerState.IsReachTenpai()) {
+      furitenList.clear();
+    }
     hand.Tumo(pai);
     FEVERMJ_LOG("‘Ò‚¿:%x\n", hand.GetWaitPais());
     if (hand.GetWaitPais() & (1 << hand.GetTumo())) {
@@ -338,6 +358,7 @@ class Player {
   
   Hand hand;
   Squeal squeal;
+  int beforePoint;
   int point;
   std::vector<int> riverList;
   std::vector<Pai> furitenList;

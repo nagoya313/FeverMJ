@@ -37,7 +37,7 @@ class Hand {
     assert(waitPais & (1 << tumo));
     std::vector<RoleHandState> states = GetStates(GetGoals(tumo), selfWind, tumo, true);
     playerState.SetTumoGoal();
-    const auto squealRole = squeal.GetRoleState(field.GetDoraList(!playerState.IsSilentTenpai()));
+    const auto squealRole = squeal.GetRoleState(field.GetDoraList(playerState.IsReachTenpai()));
     const std::uint32_t paiKindBits = GetPaiKaind() | squealRole.paiKindBits;
     RoleResult result = GetPreRole(selfWind, paiKindBits, squealRole, field, playerState);
     std::vector<Point> results;
@@ -68,7 +68,7 @@ class Hand {
     assert(waitPais & (1 << pai));
     ++kind[pai];
     std::vector<RoleHandState> states = GetStates(GetGoals(pai), selfWind, pai, false);
-    const auto squealRole = squeal.GetRoleState(field.GetDoraList(!playerState.IsSilentTenpai()));
+    const auto squealRole = squeal.GetRoleState(field.GetDoraList(playerState.IsReachTenpai()));
     const std::uint32_t paiKindBits = GetPaiKaind() | squealRole.paiKindBits;
     RoleResult result = GetPreRole(selfWind, paiKindBits, squealRole, field, playerState);
     std::vector<Point> results;
@@ -262,7 +262,7 @@ class Hand {
     if (GetNumber(pai) < 7 && kind[pai + 1] && kind[pai + 2]) {
       for (const Pai p : hand) {
         if (p != pai && p != pai + 1 && p != pai + 2) {
-          if (pai < 6) {
+          if (GetNumber(pai) < 6) {
             if (p != pai + 3) {
               tiCandidate.push_back({static_cast<Pai>(pai + 1), static_cast<Pai>(pai + 2)});
               break;
@@ -340,8 +340,7 @@ class Hand {
 
   int GetDoraCount(const Field &field, const PlayerState &playerState) const {
     int doraCount = 0;
-    // TODO:— ƒhƒ‰‚É‘Î‰ž‚·‚é
-    for (const Pai dora : field.GetDoraList(!playerState.IsSilentTenpai())) {
+    for (const Pai dora : field.GetDoraList(playerState.IsReachTenpai())) {
       if (kind[dora]) {
         doraCount += kind[dora];
       }

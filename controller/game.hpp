@@ -79,7 +79,7 @@ class Game : boost::noncopyable {
       if (darkKanPai != Model::Pai::Invalid) {
         field.AddDora();
         sequence = [this, darkKanPai] {
-          if (players[Model::House::Self].GetPlayerState().IsReach()) {
+          if (players[Model::House::Self].GetPlayerState().IsReachTenpai()) {
             CheckSelfReachHand(players[Model::House::Self].DarkKan(darkKanPai, field));
           } else {
            CheckSelfHand(false, players[Model::House::Self].DarkKan(darkKanPai, field));
@@ -128,17 +128,19 @@ class Game : boost::noncopyable {
 
   void SelectRon(const Model::Point &point, Model::House house) {
     gameView.SetWaitMode();
+    players.SetRonPoint(Model::House::Self, house, point, field);
     gameView.SetSelectRon([this] {
       GotoNextGame();
-    }, point, players.GetRonPoint(Model::House::Self, house, point, field));
+    }, point, Model::House::Self);
     sequence = [] {};
   }
 
   void SelectTumo(const Model::Point &point) {
     gameView.SetWaitMode();
+    players.SetTumoPoint(Model::House::Self, point, field);
     gameView.SetSelectTumo([this] {
       GotoNextGame();
-    }, point, players.GetTumoPoint(Model::House::Self, point, field));
+    }, point, Model::House::Self);
     sequence = [] {};
   }
 
@@ -146,8 +148,9 @@ class Game : boost::noncopyable {
     gameView.SetWaitMode();
     // TODO:リーチ不成立時のリーチ棒、供託棒の処理
     gameView.SetSelectReachMode(reachIndex, [this] (int index) {
-      SelfDiscardPai(index, false);
       players[Model::House::Self].SetReach();
+      SelfDiscardPai(index, false);
+      players[Model::House::Self].SetReachRiver();
     });
     sequence = [] {};
   }
@@ -175,7 +178,7 @@ class Game : boost::noncopyable {
     }*/
     if (han) {
       gameView.SetMenuMode([this] {
-        ThroughSqueal(Model::House::Up);
+        ThroughSqueal(Model::House::Up, Model::Pai::Invalid);
         gameView.SetWaitMode();
       }, View::MenuMode::Cancel);
       sequence = [] {};
@@ -233,8 +236,11 @@ class Game : boost::noncopyable {
     gameView.SetWaitMode();
   }
 
-  void ThroughSqueal(Model::House house) {
+  void ThroughSqueal(Model::House house, Model::Pai pai) {
     // パスしたことを牌を切った家に送信
+    if (pai != Model::Pai::Invalid) {
+      players[Model::House::Self].SetFuritenPai(pai);
+    }
     if (house == Model::House::Up) {
       sequence = [this] {SelfTumo();};
     } else {
@@ -243,9 +249,9 @@ class Game : boost::noncopyable {
   }
 
   void CheckSelfSqueal(Model::House house, Model::Pai pai) {
-    const bool isPonEnable = !players[Model::House::Self].GetPlayerState().IsReach() && players[Model::House::Self].IsPonEnable(pai)  && !gameView.NotSquealButtonIsToggle();
-    const bool isKanEnable = !players[Model::House::Self].GetPlayerState().IsReach() && players[Model::House::Self].IsLightKanEnable(pai)  && !gameView.NotSquealButtonIsToggle();
-    const auto tiList = !players[Model::House::Self].GetPlayerState().IsReach() && house == Model::House::Up && !gameView.NotSquealButtonIsToggle() ?
+    const bool isPonEnable = !players[Model::House::Self].GetPlayerState().IsReachTenpai() && players[Model::House::Self].IsPonEnable(pai)  && !gameView.NotSquealButtonIsToggle();
+    const bool isKanEnable = !players[Model::House::Self].GetPlayerState().IsReachTenpai() && players[Model::House::Self].IsLightKanEnable(pai)  && !gameView.NotSquealButtonIsToggle();
+    const auto tiList = !players[Model::House::Self].GetPlayerState().IsReachTenpai() && house == Model::House::Up && !gameView.NotSquealButtonIsToggle() ?
                         players[Model::House::Self].GetTiCandidate(pai) : std::vector<Model::TiPair>{};
     const auto point = players[Model::House::Self].Ron(pai, field);
     if (point.GetHan()) {
@@ -269,13 +275,13 @@ class Game : boost::noncopyable {
       }, View::MenuMode::Ti);
     }
     if (isPonEnable || isKanEnable || !tiList.empty() || point.GetHan()) {
-      gameView.SetMenuMode([this, house] {
-        ThroughSqueal(house);
+      gameView.SetMenuMode([this, house, pai] {
+        ThroughSqueal(house, pai);
         gameView.SetWaitMode();
       }, View::MenuMode::Cancel);
       sequence = [] {};
     } else {
-      ThroughSqueal(house);
+      ThroughSqueal(house, pai);
     }
   }
 
@@ -283,7 +289,7 @@ class Game : boost::noncopyable {
     players.AllDeleteFirst();
     gameView.SetWaitMode();
     sequence = [this] {
-      if (players[Model::House::Self].GetPlayerState().IsReach()) {
+      if (players[Model::House::Self].GetPlayerState().IsReachTenpai()) {
         CheckSelfReachHand(players[Model::House::Self].EraseNorth(field));
       } else {
         CheckSelfHand(false, players[Model::House::Self].EraseNorth(field));
@@ -296,7 +302,7 @@ class Game : boost::noncopyable {
 
   void SelfTumo() {
     sequence = [this] {
-      if (players[Model::House::Self].GetPlayerState().IsReach()) {
+      if (players[Model::House::Self].GetPlayerState().IsReachTenpai()) {
         CheckSelfReachHand(players[Model::House::Self].Tumo(field));
       } else {
         CheckSelfHand(false, players[Model::House::Self].Tumo(field));
@@ -332,6 +338,7 @@ class Game : boost::noncopyable {
 
   void FlowSet() {
     // TODO:形式聴牌に対応
+    players.SetFlowPoint();
     gameView.SetFlowSet([this] {
       GotoNextGame();
     }, {{0, 0, 0}});
