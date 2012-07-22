@@ -40,6 +40,7 @@ class Player {
   Point Ron(Pai pai, Field &field) {
     if (hand.GetWaitPais() & (1 << pai) && !playerState.IsFuriten()) {
       FEVERMJ_LOG("ƒƒ“‚Á‚½H\n");
+      goalPai = pai;
       return hand.IsRonGoal(pai, selfWind, squeal, field, playerState);
     }
     return {};
@@ -198,7 +199,11 @@ class Player {
     return squeal.IsAddKanEnablePai(pai);
   }
 
-  bool IsDarkOrAddKanenable() const {
+  bool IsReachKanEnable() const {
+    return hand.IsReachKanEnable();
+  }
+
+  bool IsDarkOrAddKanEnable() const {
     return IsDarkKanEnable() || IsAddKanEnable();
   }
 
@@ -286,6 +291,10 @@ class Player {
     playerState.SetFirst();
   }
 
+  Pai GetGoalPai() const {
+    return goalPai;
+  }
+
  private:
   void Init(std::vector<Pai> &&firstPai, Wind wind) {
     hand.Init(std::move(firstPai));
@@ -350,6 +359,7 @@ class Player {
     hand.Tumo(pai);
     FEVERMJ_LOG("‘Ò‚¿:%x\n", hand.GetWaitPais());
     if (hand.GetWaitPais() & (1 << hand.GetTumo())) {
+      goalPai = pai;
       FEVERMJ_LOG("ƒcƒ‚‚Á‚½\n");
       return hand.IsTumoGoal(selfWind, squeal, field, playerState);
     }
@@ -366,6 +376,7 @@ class Player {
   PlayerState playerState;
   Wind selfWind;
   std::uint32_t notSelectableBits;
+  Pai goalPai;
 };
 }}
 

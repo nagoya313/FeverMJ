@@ -31,7 +31,7 @@ class Game : boost::noncopyable {
     playersView.Draw(input, field, players, paiImage);
     squealView.Draw(input);
     statusView.Draw(field, players);
-    resultView.Draw(field, players, input);
+    resultView.Draw(field, players, input, paiImage);
     notSquealButton.Update(input);
     ScreenFlip();
   }

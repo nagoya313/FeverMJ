@@ -107,6 +107,10 @@ class RoleHand {
     return role;
   }
 
+  bool IsReachKanEnable(Pai pai) const {
+    return boost::any_of(tripleList, [pai](Pai p) {return p == pai;});
+  }
+
  private:
   void CheckHu(RoleHandState &role, Wind selfWind) const {
     if (isKokusiMuso || isSevenDouble) {

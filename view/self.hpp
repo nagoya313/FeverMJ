@@ -220,7 +220,7 @@ class Self : boost::noncopyable {
 
   void DrawSqueal(const Model::Field &field, const Model::Player &self, const Utility::PaiImage &paiImage) {
     int pos = field.GetFirstParentHouse() == Model::House::Self ? 738 : 800;
-    int size = self.GetSquealSize();
+    const int size = self.GetSquealSize();
     for (int i = 0; i < size; ++i) {
       const int pai = self.GetSquealImageHandle(i);
       pos -= pai < Model::squealOffset ? 33 : 44;
@@ -228,7 +228,7 @@ class Self : boost::noncopyable {
                         paiImage.GetBackHandle(0) : pai < Model::squealOffset ?
                         paiImage.GetUpHandle(pai) : paiImage.GetRightHandle(pai % Model::squealOffset);
       if (pai >= Model::squealOffset * 2) {
-        DrawGraph(pos, 514, image, TRUE);
+        DrawGraph(pos, 26, image, TRUE);
       }
       DrawGraph(pos, pai < Model::squealOffset ? 536 : 546, image, TRUE);
     }

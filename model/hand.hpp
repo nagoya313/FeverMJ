@@ -203,6 +203,10 @@ class Hand {
     return false;
   }
 
+  bool IsReachKanEnable() const {
+    return kind[tumo] == 4 && boost::all_of(tenpais, [this](const RoleHand &x) {return x.IsReachKanEnable(tumo);});
+  }
+
   std::vector<TiPair> GetTiCandidate(Pai pai) const {
     assert(pai != Pai::Invalid);
     std::vector<std::pair<Pai, Pai>> tiCandidate;
@@ -371,7 +375,7 @@ class Hand {
     result.huCount = 20 + squealRole.huCount;
     result.doraCount = GetDoraCount(field, playerState) + squealRole.doraCount;
     PreCheckRole(selfWind, playerState, paiKindBits, hand.size(), squealRole, field, result);
-    CheckBitsRole(paiKindBits, kind, playerState, result);
+    CheckBitsRole(paiKindBits, hand.size(), kind, playerState, result);
     return result;
   }
 

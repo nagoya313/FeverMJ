@@ -253,6 +253,7 @@ void CheckNineTreasure(std::uint32_t paiKindBits, const PaiKindArray &kind, Role
 
 inline
 void CheckSingleColorRole(std::uint32_t paiKindBits,
+                          int handSize,
                           const PaiKindArray &kind,
                           const PlayerState &playerState,
                           RoleResult &result) {
@@ -264,25 +265,24 @@ void CheckSingleColorRole(std::uint32_t paiKindBits,
     result.hanCount += 13;
   } else if (!(paiKindBits & ~RoleBits::PinzuPure) || !(paiKindBits & ~RoleBits::SozuPure)) {
     result.roleBits |= Role::PureColor;
-    result.hanCount += playerState.IsMenzen() ? 6 : 4;
-    if (playerState.IsMenzen()) {
+    result.hanCount += playerState.IsMenzen() ? 6 : 5;
+    if (playerState.IsMenzen() && handSize == 13) {
       CheckNineTreasure(paiKindBits, kind, result);
     }
-  } else if (!(paiKindBits & ~RoleBits::ManzuSingle) ||
-             !(paiKindBits & ~RoleBits::PinzuSingle) ||
-             !(paiKindBits & ~RoleBits::SozuSingle)) {
+  } else if (!(paiKindBits & ~RoleBits::ManzuSingle) || !(paiKindBits & ~RoleBits::PinzuSingle) || !(paiKindBits & ~RoleBits::SozuSingle)) {
     result.roleBits |= Role::SingleColor;
-    result.hanCount += playerState.IsMenzen() ? 3 : 1;
+    result.hanCount += playerState.IsMenzen() ? 2 : 1;
   }
 }
 
 inline
 void CheckBitsRole(std::uint32_t paiKindBits,
+                   int handSize,
                    const PaiKindArray &kind,
                    const PlayerState &playerState,
                    RoleResult &result) {
   CheckTanyaoBitsRole(paiKindBits, result);
-  CheckSingleColorRole(paiKindBits, kind, playerState, result);
+  CheckSingleColorRole(paiKindBits, handSize, kind, playerState, result);
 }
 
 inline

@@ -162,21 +162,21 @@ class Game : boost::noncopyable {
         SelectTumo(point);
       }, View::MenuMode::Tumo);
     }
-    // TODO:リーチ時の暗カン、抜き北に対応
-    /*
+    bool isEraseNorthEnable = false;
+    bool isReachKanEnable = false;
     if (!field.IsPaiEmpty()) {
-      if (field.GetDoraCount() <= 5 && players[Model::House::Self].IsDarkOrAddKanenable()) {
-        gameView.SetMenuMode([this, isAddKan] {
-          SelectKan(isAddKan);
+      if ((isReachKanEnable = field.GetDoraCount() <= 5 && players[Model::House::Self].IsReachKanEnable())) {
+        gameView.SetMenuMode([this] {
+          SelectReachKan();
         }, View::MenuMode::Kan);
       }
-      if (players[Model::House::Self].GetPaiCount(Model::Pai::North)) {
-        gameView.SetMenuMode([this, isAddKan] {
-          SelectNorth(isAddKan);
+      if ((isEraseNorthEnable = players[Model::House::Self].GetTumo() == Model::Pai::North)) {
+        gameView.SetMenuMode([this] {
+          SelectNorth(false);
         }, View::MenuMode::EraseNorth);
       }
-    }*/
-    if (han) {
+    }
+    if (han || isReachKanEnable || isEraseNorthEnable) {
       gameView.SetMenuMode([this] {
         ThroughSqueal(Model::House::Up, Model::Pai::Invalid);
         gameView.SetWaitMode();
@@ -200,7 +200,7 @@ class Game : boost::noncopyable {
       }, View::MenuMode::Reach);
     }
     if (!field.IsPaiEmpty()) {
-      if (field.GetDoraCount() <= 5 && players[Model::House::Self].IsDarkOrAddKanenable() && !gameView.NotSquealButtonIsToggle()) {
+      if (field.GetDoraCount() <= 5 && players[Model::House::Self].IsDarkOrAddKanEnable() && !gameView.NotSquealButtonIsToggle()) {
         gameView.SetMenuMode([this, isAddKan] {
           SelectKan(isAddKan);
         }, View::MenuMode::Kan);
@@ -233,6 +233,13 @@ class Game : boost::noncopyable {
   void LightKan(Model::House house, Model::Pai pai) {
     const auto point = players.LightKan(Model::House::Self, house, pai, field);
     sequence = [this, point] {CheckSelfHand(true, point);};
+    gameView.SetWaitMode();
+  }
+
+  void SelectReachKan() {
+    players.AllDeleteFirst();
+    field.AddDora();
+    sequence = [this] {CheckSelfReachHand(players[Model::House::Self].DarkKan(players[Model::House::Self].GetTumo(), field));};
     gameView.SetWaitMode();
   }
 
