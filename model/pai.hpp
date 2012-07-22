@@ -142,7 +142,7 @@ Pai GetDora(Pai displayDora) {
     case Pai::P9:
       return Pai::P1;
     case Pai::S9:
-      return Pai::S9;
+      return Pai::S1;
     case Pai::North:
       return Pai::East;
     case Pai::Center:
