@@ -228,7 +228,7 @@ class Self : boost::noncopyable {
                         paiImage.GetBackHandle(0) : pai < Model::squealOffset ?
                         paiImage.GetUpHandle(pai) : paiImage.GetRightHandle(pai % Model::squealOffset);
       if (pai >= Model::squealOffset * 2) {
-        DrawGraph(pos, 26, image, TRUE);
+        DrawGraph(pos, 514, image, TRUE);
       }
       DrawGraph(pos, pai < Model::squealOffset ? 536 : 546, image, TRUE);
     }

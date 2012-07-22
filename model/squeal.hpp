@@ -135,7 +135,7 @@ class Squeal {
     role.paiKindBits |= (1 << pai) | (1 << (pai + 1)) | (1 << (pai + 2));
     for (int i = 0; i < 3; ++i) {
       for (const Pai dora : doras) {
-        if (pai + 1 == dora) {
+        if (pai + i == dora) {
           ++role.doraCount;
         }
       }
