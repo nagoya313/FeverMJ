@@ -46,18 +46,6 @@ class Players : boost::noncopyable {
     selfView.SetWaitMode();
   }
 
-  void SetFlowSet() {
-    upHouseView.SetFlowSet();
-    selfView.SetFlowSet();
-    downHouseView.SetFlowSet();
-  }
-
-  void SetStart() {
-    upHouseView.SetStart();
-    selfView.SetStart();
-    downHouseView.SetStart();
-  }
-
  private:
   UpHouse upHouseView;
   Self selfView;

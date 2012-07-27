@@ -93,7 +93,7 @@ class Squeal {
     return ponBits & (1 << pai);
   }
 
-  RoleSquealState GetRoleState(const std::vector<Pai> &doras) const {
+  RoleSquealState GetRoleState(const DoraVector &doras) const {
     RoleSquealState role = {};
     role.isTyanta = true;
     int darkKanCount = 0;
@@ -131,7 +131,7 @@ class Squeal {
   }
 
  private:
-  void CheckTiRoleState(const std::vector<Pai> &doras, int pai, RoleSquealState &role) const {
+  void CheckTiRoleState(const DoraVector &doras, int pai, RoleSquealState &role) const {
     role.paiKindBits |= (1 << pai) | (1 << (pai + 1)) | (1 << (pai + 2));
     for (int i = 0; i < 3; ++i) {
       for (const Pai dora : doras) {
@@ -159,7 +159,7 @@ class Squeal {
     }
   }
 
-  void CheckPonRoleState(const std::vector<Pai> &doras, int pai, RoleSquealState &role) const {
+  void CheckPonRoleState(const DoraVector &doras, int pai, RoleSquealState &role) const {
     CheckPonKanRoleState(pai, 2, role);
     for (const Pai dora : doras) {
       if (pai == dora) {
@@ -168,7 +168,7 @@ class Squeal {
     }
   }
 
-  void CheckKanRoleState(const std::vector<Pai> &doras, int pai, int hu, RoleSquealState &role) const {
+  void CheckKanRoleState(const DoraVector &doras, int pai, int hu, RoleSquealState &role) const {
     CheckPonKanRoleState(pai, hu, role);
     for (const Pai dora : doras) {
       if (pai == dora) {

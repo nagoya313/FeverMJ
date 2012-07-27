@@ -317,6 +317,10 @@ void CheckReachRole(const PlayerState &playerState, RoleResult &result) {
   if (playerState.IsOpen()) {
     result.roleBits |= Role::Open;
     ++result.hanCount;
+    if (playerState.IsOpenRon()) {
+      result.roleBits |= Role::OpenRon;
+      result.hanCount += 11;
+    }
   } else if (playerState.IsFever()) {
     result.roleBits |= Role::Fever;
     ++result.hanCount;

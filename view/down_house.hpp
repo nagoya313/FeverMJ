@@ -14,14 +14,6 @@ class DownHouse : boost::noncopyable {
     DrawRiver(downHouse, paiImage);
   }
 
-  void SetFlowSet() {
-    isFlowSet = true;
-  }
-
-  void SetStart() {
-    isFlowSet = false;
-  }
-
  private:
   void DrawTumo(const Model::Player &downHouse, const Utility::PaiImage &paiImage) {
     const Model::Pai tumo = downHouse.GetTumo();
@@ -33,14 +25,11 @@ class DownHouse : boost::noncopyable {
   void DrawHand(const Model::Player &downHouse, const Utility::PaiImage &paiImage) {
     const int size = downHouse.GetHandSize();
     for (int i = 0; i < size; ++i) {
-      if (isFlowSet) {
-        DrawGraph(752, 192 + 22 * i,
-                  downHouse.IsTenpai() ?
-                  paiImage.GetLeftHandle(downHouse.GetHandPai(i)) :
-                  paiImage.GetBackHandle(2), TRUE);
-      } else {
-        DrawGraph(752, 192 + 22 * i, paiImage.GetBackHandle(1), TRUE);
-      }
+      const auto pai = downHouse.GetHandPai(i);
+      const int handle = pai != Model::Pai::Invalid ?
+                         pai >= Model::squealOffset ?
+                         paiImage.GetLeftHandle(pai % Model::squealOffset) : paiImage.GetBackHandle(1) : paiImage.GetBackHandle(2);
+      DrawGraph(752, 192 + 22 * i, handle, TRUE);
     }
   }
 
@@ -55,8 +44,6 @@ class DownHouse : boost::noncopyable {
       }
     }
   }
-
-  bool isFlowSet = false;
 };
 }}
 

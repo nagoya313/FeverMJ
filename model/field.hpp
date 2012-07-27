@@ -51,7 +51,7 @@ class Field {
     return breakHouse;
   }
 
-  std::vector<Pai> GetFirstPais() {
+  HandVector GetFirstPais() {
     return tumoMountain.PopFirstPais();
   }
 
@@ -84,7 +84,7 @@ class Field {
     return oneMountain.GetDisplayDora(i);
   }
 
-  std::vector<Pai> GetDoraList(bool withReverse) const {
+  DoraVector GetDoraList(bool withReverse) const {
     return oneMountain.GetDoraList(withReverse);
   }
 

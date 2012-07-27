@@ -15,7 +15,8 @@ enum WaitType {
   BothSide = 1 << 1,
   Between = 1 << 2,
   SingleSide = 1 << 3,
-  DoubleHead = 1 << 4
+  DoubleHead = 1 << 4,
+  Rising = 1 << 5
 };
 }
 
@@ -30,15 +31,25 @@ class RoleHand {
   void SetSevenDouble(std::uint32_t waitPai) {
     isSevenDouble = true;
     waitPais = waitPai;
+    waitType = WaitType::Single;
   }
 
   void SetKokusiMuso(std::uint32_t waitPai) {
     isKokusiMuso = true;
     waitPais = waitPai;
+    waitType = waitPais == RoleBits::OldHead ? WaitType::Rising : WaitType::Single;
+  }
+
+  bool IsKokusiMuso() const {
+    return isKokusiMuso;
   }
 
   std::uint32_t GetWaitPais() const {
     return waitPais;
+  }
+
+  WaitType GetWaitType() const {
+    return waitType;
   }
 
   void AddTriple(Pai pai) {
@@ -133,7 +144,7 @@ class RoleHand {
 
   void CheckTripleRoleState(bool isTumoGoal, RoleHandState &role) const {
     int tripleCount = 0;
-    for (const Pai pai : tripleList) {
+    for (const auto pai : tripleList) {
       if (IsTyuntyanPai(pai)) {
         role.isTyanta = false;
         role.huCount += 4;
@@ -166,7 +177,7 @@ class RoleHand {
     }
     boost::sort(straightList);
     Pai beforePai = Pai::Invalid;
-    for (const Pai pai : straightList) {
+    for (const auto pai : straightList) {
       const int number = GetNumber(pai);
       if (number > 0 && number < 6) {
         role.isTyanta = false;

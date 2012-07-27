@@ -1,11 +1,6 @@
-#define DX_NON_OGGVORBIS
-#define DX_NON_OGGTHEORA
 #include <DxLib.h>
 #include "controller/game.hpp"
 #include "view/info.hpp"
-#include "model/check_role.hpp"
-#include "model/check_tenpai.hpp"
-#include "model/player.hpp"
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   SetMainWindowText(FeverMJ::View::title);

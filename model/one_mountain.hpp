@@ -37,8 +37,8 @@ class OneMountain {
     return i < GetDoraCount() ? mountain[10 - (2 * i + 1)] : Pai::Invalid;
   }
 
-  std::vector<Pai> GetDoraList(bool withReverse) const {
-    std::vector<Pai> doraList = {Pai::M1, Pai::M9, Pai::North};
+  DoraVector GetDoraList(bool withReverse) const {
+    DoraVector doraList = {Pai::M1, Pai::M9, Pai::North};
     for (int i = 0; i < GetDoraCount(); ++i) {
       doraList.push_back(GetDora(GetDisplayDora(i)));
       if (withReverse) {

@@ -14,14 +14,6 @@ class UpHouse : boost::noncopyable {
     DrawRiver(upHouse, paiImage);
   }
 
-  void SetFlowSet() {
-    isFlowSet = true;
-  }
-
-  void SetStart() {
-    isFlowSet = false;
-  }
-
  private:
   void DrawTumo(const Model::Player &upHouse, const Utility::PaiImage &paiImage) {
     const int size = upHouse.GetHandSize();
@@ -34,14 +26,12 @@ class UpHouse : boost::noncopyable {
   void DrawHand(const Model::Player &upHouse, const Utility::PaiImage &paiImage) {
     const int size = upHouse.GetHandSize();
     for (int i = 0; i < size; ++i) {
-      if (isFlowSet) {
-        DrawGraph(5, 64 + 22 * i, 
-                  upHouse.IsTenpai() ? 
-                  paiImage.GetRightHandle(upHouse.GetHandPai(i)) :
-                  paiImage.GetBackHandle(2), TRUE);
-      } else {
-        DrawGraph(24, 64 + 22 * i, paiImage.GetBackHandle(1), TRUE);
-      }
+      const auto pai = upHouse.GetHandPai(i);
+      const int x = pai == Model::Pai::Invalid || pai >= Model::squealOffset ? x : 24;
+      const int handle = pai != Model::Pai::Invalid ?
+                         pai >= Model::squealOffset ?
+                         paiImage.GetRightHandle(pai % Model::squealOffset) : paiImage.GetBackHandle(1) : paiImage.GetBackHandle(2);
+      DrawGraph(x, 64 + 22 * i, handle, TRUE);
     }
   }
 
@@ -52,8 +42,6 @@ class UpHouse : boost::noncopyable {
                 paiImage.GetRightHandle(upHouse.GetRiverImageHandle(i)), TRUE);
     }
   }
-
-  bool isFlowSet = false;
 };
 }}
 

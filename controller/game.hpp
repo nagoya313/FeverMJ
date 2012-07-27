@@ -155,6 +155,17 @@ class Game : boost::noncopyable {
     sequence = [] {};
   }
 
+  void SelectOpenReach(std::uint32_t reachIndex) {
+    gameView.SetWaitMode();
+    // TODO:リーチ不成立時のリーチ棒、供託棒の処理
+    gameView.SetSelectReachMode(reachIndex, [this] (int index) {
+      players[Model::House::Self].SetOpenReach();
+      SelfDiscardPai(index, false);
+      players[Model::House::Self].SetReachRiver();
+    });
+    sequence = [] {};
+  }
+
   void CheckSelfReachHand(const Model::Point &point) {
     const auto han = point.GetHan();
     if (han) {
@@ -178,7 +189,7 @@ class Game : boost::noncopyable {
     }
     if (han || isReachKanEnable || isEraseNorthEnable) {
       gameView.SetMenuMode([this] {
-        ThroughSqueal(Model::House::Up, Model::Pai::Invalid);
+        SelfDiscardPai(-1, false);
         gameView.SetWaitMode();
       }, View::MenuMode::Cancel);
       sequence = [] {};
@@ -198,6 +209,9 @@ class Game : boost::noncopyable {
       gameView.SetMenuMode([this, reachIndex] {
         SelectReach(reachIndex);
       }, View::MenuMode::Reach);
+      gameView.SetMenuMode([this, reachIndex] {
+        SelectOpenReach(reachIndex);
+      }, View::MenuMode::OpenReach);
     }
     if (!field.IsPaiEmpty()) {
       if (field.GetDoraCount() <= 5 && players[Model::House::Self].IsDarkOrAddKanEnable() && !gameView.NotSquealButtonIsToggle()) {
@@ -260,7 +274,11 @@ class Game : boost::noncopyable {
     const bool isKanEnable = !players[Model::House::Self].GetPlayerState().IsReachTenpai() && players[Model::House::Self].IsLightKanEnable(pai)  && !gameView.NotSquealButtonIsToggle();
     const auto tiList = !players[Model::House::Self].GetPlayerState().IsReachTenpai() && house == Model::House::Up && !gameView.NotSquealButtonIsToggle() ?
                         players[Model::House::Self].GetTiCandidate(pai) : std::vector<Model::TiPair>{};
+    if (players[Model::House::Self].GetPlayerState().IsOpen() && !players[house].GetPlayerState().IsReachTenpai()) {
+      players[Model::House::Self].SetOpenRon();
+    }
     const auto point = players[Model::House::Self].Ron(pai, field);
+    players[Model::House::Self].ResetOpenRon();
     if (point.GetHan()) {
       gameView.SetMenuMode([this, point, house] {
         SelectRon(point, house);

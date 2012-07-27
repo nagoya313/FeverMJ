@@ -16,12 +16,12 @@
 namespace FeverMJ { namespace Model {
 class Hand {
  public:
-  void Init(std::vector<Pai> &&firstPai) {
+  void Init(HandVector &&firstPai) {
     tumo = Pai::Invalid;
     hand = std::move(firstPai);
     boost::sort(hand);
     kind = {};
-    for (const Pai pai : hand) {
+    for (const auto pai : hand) {
       ++kind[pai];
     }
     tenpais.clear();
@@ -99,21 +99,21 @@ class Hand {
   }
 
   Pai TumoCut() {
-    const Pai pai = tumo;
-    --kind[tumo];
+    const auto pai = tumo;
+    --kind[pai];
     tumo = Pai::Invalid;
-    return pai;
+    return static_cast<Pai>(pai);
   }
 
   Pai HandCut(int i) {
-    const Pai pai = hand[i];
+    const auto pai = hand[i];
     --kind[pai];
     hand.erase(std::next(hand.begin(), i));
     if (tumo != Pai::Invalid) {
       hand.insert(boost::lower_bound(hand, tumo), tumo);
       tumo = Pai::Invalid;
     }
-    return pai;
+    return static_cast<Pai>(pai);
   }
 
   void EraseNorth() {
@@ -145,11 +145,11 @@ class Hand {
     hand.erase(pair.first, std::next(pair.first, 2));
   }
 
-  void DarkKan(Pai pai) {
+  void DarkKan(Pai pai, bool isOpen) {
     assert(pai != Pai::Invalid);
     assert(kind[pai] == 4);
     kind[pai] -= 4;
-    const auto pair = boost::equal_range(hand, pai);
+    const auto pair = isOpen ? boost::equal_range(hand, pai + squealOffset) : boost::equal_range(hand, pai);
     assert(pair.first != pair.second);
     hand.erase(pair.first, pair.second);
     if (pai != tumo) {
@@ -182,7 +182,7 @@ class Hand {
   }
 
   Pai GetHand(int i) const {
-    return hand[i];
+    return static_cast<Pai>(hand[i]);
   }
 
   int GetHandSize() const {
@@ -224,6 +224,10 @@ class Hand {
   }
 
   std::vector<std::vector<RoleHand>> GetReachPatern() const {
+    for (int i = 0; i < paiKindMax; ++i) {
+      FEVERMJ_LOG("%d,", kind[i]);
+    }
+    FEVERMJ_LOG("\n");
     const int size = hand.size();
     std::vector<std::vector<RoleHand>> patern;
     std::vector<RoleHand> t;
@@ -259,23 +263,86 @@ class Hand {
     return waitPais;
   }
 
+  void SetOpenReach() {
+    /*
+    std::uint32_t single = 0x0;
+    std::uint32_t doubleHead = 0x0;
+    std::uint32_t between = 0x0;
+    std::uint32_t singleSide = 0x0;
+    std::uint32_t bothSide = 0x0;
+    bool isKokusi = false;
+    int matiCount = 0;
+    for (int i = 0; i < paiKindMax; ++i) {
+      if (waitPais & (1 << i)) {
+        ++matiCount;
+      }
+    }
+    for (const auto &tenpai : tenpais) {
+      if ((isKokusi = tenpai.IsKokusiMuso())) {
+        break;
+      }
+      if (tenpai.GetWaitType() == WaitType::Single) {
+        single |= tenpai.GetWaitPais();
+      }
+      if (tenpai.GetWaitType() == WaitType::DoubleHead) {
+        doubleHead |= tenpai.GetWaitPais();
+      }
+      if (tenpai.GetWaitType() == WaitType::Between) {
+        between |= tenpai.GetWaitPais();
+      }
+      if (tenpai.GetWaitType() == WaitType::SingleSide) {
+        singleSide |= tenpai.GetWaitPais();
+      }
+      if (tenpai.GetWaitType() == WaitType::BothSide) {
+        bothSide |= tenpai.GetWaitPais();
+      }
+    }
+    PaiKindArray temp = {};
+    if (matiCount) {
+      printfDx("%d\n", matiCount);
+    }
+    if (matiCount == 1) {
+      temp = GetOneWaitOpenReach(single, singleSide, between);
+    } else if (matiCount == 2) {
+      temp = GetTwoWaitOpenReach(single, doubleHead, between, bothSide, kind);
+    } else if (matiCount == 3) {
+      temp = GetThreeWaitOpenReach(single, doubleHead, between, singleSide, bothSide, kind);
+    } else if (matiCount == 4) {
+      temp = GetFourWaitOpenReach(single, doubleHead, between, singleSide, bothSide, kind);
+    } else if (matiCount == 7) {
+      temp = GetSevenWaitOpenReach(single, kind);
+    } else if (matiCount == 8) {
+      temp = GetEightWaitOpenReach(single);
+    }*/
+    for (auto &pai : hand) {
+      //if (matiCount >= 9 || isKokusi || temp[pai]) {
+        //--temp[pai];
+        pai += squealOffset;
+      //}
+    }
+    //boost::sort(hand);
+  }
+
+  void SetFlow() {
+    for (auto &pai : hand) {
+      pai = Pai::Invalid;
+    }
+  }
+
  private:
   void GetTiCandidateUpBothSideWait(std::vector<std::pair<Pai, Pai>> &tiCandidate, Pai pai) const {
     assert(pai != Pai::Invalid);
     assert(pai >= Pai::P1 && pai <= Pai::S9);
     if (GetNumber(pai) < 7 && kind[pai + 1] && kind[pai + 2]) {
-      for (const Pai p : hand) {
-        if (p != pai && p != pai + 1 && p != pai + 2) {
-          if (GetNumber(pai) < 6) {
-            if (p != pai + 3) {
-              tiCandidate.push_back({static_cast<Pai>(pai + 1), static_cast<Pai>(pai + 2)});
-              break;
-            }
-          } else {
-            tiCandidate.push_back({static_cast<Pai>(pai + 1), static_cast<Pai>(pai + 2)});
-            break;
-          }
-        }
+      PaiKindArray temp = kind;
+      temp[pai] = 0;
+      --temp[pai + 1];
+      --temp[pai + 2];
+      if (GetNumber(pai) < 6) {
+        temp[pai + 3] = 0;
+      }
+      if (boost::any_of(temp, [](int x) {return x;})) {
+        tiCandidate.push_back({static_cast<Pai>(pai + 1), static_cast<Pai>(pai + 2)});
       }
     }
   }
@@ -283,19 +350,16 @@ class Hand {
   void GetTiCandidateDownBothSideWait(std::vector<std::pair<Pai, Pai>> &tiCandidate, Pai pai) const {
     assert(pai != Pai::Invalid);
     assert(pai >= Pai::P1 && pai <= Pai::S9);
-    if (GetNumber(pai) > 1 && kind[pai -1] && kind[pai -2]) {
-      for (const Pai p : hand) {
-        if (p != pai && p != pai - 1 && p != pai - 2) {
-          if (GetNumber(pai) > 2) {
-            if (p != pai - 3) {
-              tiCandidate.push_back({static_cast<Pai>(pai - 2), static_cast<Pai>(pai - 1)});
-              break;
-            }
-          } else {
-            tiCandidate.push_back({static_cast<Pai>(pai - 2), static_cast<Pai>(pai - 1)});
-            break;
-          }
-        }
+    if (GetNumber(pai) > 1 && kind[pai - 1] && kind[pai - 2]) {
+      PaiKindArray temp = kind;
+      temp[pai] = 0;
+      --temp[pai - 1];
+      --temp[pai - 2];
+      if (GetNumber(pai) > 2) {
+        temp[pai - 3] = 0;
+      }
+      if (boost::any_of(temp, [](int x) {return x;})) {
+        tiCandidate.push_back({static_cast<Pai>(pai - 2), static_cast<Pai>(pai - 1)});
       }
     }
   }
@@ -305,11 +369,12 @@ class Hand {
     assert(pai >= Pai::P1 && pai <= Pai::S9);
     const int number = GetNumber(pai);
     if (number != 0 && number != 8 && kind[pai - 1] && kind[pai + 1]) {
-      for (const Pai p : hand) {
-        if (p != pai && p != pai - 1 && p != pai + 1) {
-          tiCandidate.push_back({static_cast<Pai>(pai - 1), static_cast<Pai>(pai + 1)});
-          break;
-        }
+      PaiKindArray temp = kind;
+      temp[pai] = 0;
+      --temp[pai - 1];
+      --temp[pai + 1];
+      if (boost::any_of(temp, [](int x) {return x;})) {
+        tiCandidate.push_back({static_cast<Pai>(pai - 1), static_cast<Pai>(pai + 1)});
       }
     }
   }
@@ -339,6 +404,7 @@ class Hand {
         paiKindBits |= 1 << i;
       }
     }
+    printfDx("Ží—Þ %x\n", paiKindBits);
     return paiKindBits;
   }
 
@@ -379,8 +445,8 @@ class Hand {
     return result;
   }
 
-  std::vector<Pai> hand;
-  mutable std::array<int, paiKindMax> kind;
+  HandVector hand;
+  mutable PaiKindArray kind;
   Pai tumo;
   std::vector<RoleHand> tenpais;
   std::uint32_t waitPais;

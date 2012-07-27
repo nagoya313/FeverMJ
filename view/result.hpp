@@ -66,7 +66,7 @@ class Result : boost::noncopyable {
   void DrawGoalHand(const Model::Player &player, const Utility::PaiImage &paiImage) {
     const int size = player.GetHandSize();
     for (int i = 0; i < size; ++i) {
-      DrawGraph(80 + 33 * i, 48, paiImage.GetUpHandle(player.GetHandPai(i)), TRUE);
+      DrawGraph(80 + 33 * i, 48, paiImage.GetUpHandle(player.GetHandPai(i) % Model::squealOffset), TRUE);
     }
     DrawGraph(105 + 33 * size, 48, paiImage.GetUpHandle(player.GetGoalPai()), TRUE);
     int pos = 738;
@@ -89,9 +89,9 @@ class Result : boost::noncopyable {
     DrawPoint(players);
     int y = 0;
     const auto role = point.GetRole();
-    for (std::uint64_t i = 0LL; i < 52LL; ++i) {
+    for (std::uint64_t i = 0LL; i < 53LL; ++i) {
       if (role & (1LL << i)) {
-        if (i == 51L) {
+        if (i == 52L) {
           DrawFormatString(32, 152 + y * 32, GetColor(255, 255, 255), "ƒhƒ‰@%d\n", point.GetDoraCount());
         } else {
           DrawFormatString(32, 152 + y * 32, GetColor(255, 255, 255), "%s\n", Model::roleString[i]);

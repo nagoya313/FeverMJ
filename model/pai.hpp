@@ -84,8 +84,10 @@ using RoleBits_::RoleBits;
 constexpr int paiKindMax = 27;
 constexpr int squealOffset = 32;
 
-typedef std::array<int, paiKindMax> PaiKindArray;
-typedef std::pair<Pai, Pai> TiPair;
+using PaiKindArray = std::array<int, paiKindMax>;
+using HandVector = std::vector<int>;
+using DoraVector = std::vector<Pai>;
+using TiPair = std::pair<Pai, Pai>;
 
 inline
 bool IsSameColor(int lhs, int rhs) {

@@ -15,16 +15,16 @@
 namespace FeverMJ { namespace Model {
 class Player {
  public:
-  void GameStartInit(std::vector<Pai> &&firstPai, Wind wind) {
+  void GameStartInit(HandVector &&firstPai, Wind wind) {
     beforePoint = point = 25000;
     Init(std::move(firstPai), wind);
   }
 
-  void ContinueSetInit(std::vector<Pai> &&firstPai) {
+  void ContinueSetInit(HandVector &&firstPai) {
     Init(std::move(firstPai), selfWind);
   }
 
-  void NextSetInit(std::vector<Pai> &&firstPai) {
+  void NextSetInit(HandVector &&firstPai) {
     Init(std::move(firstPai), GetPrevWind(selfWind));
   }
 
@@ -107,7 +107,7 @@ class Player {
 
   Point DarkKan(Pai pai, Field &field) {
     assert(pai != Pai::Invalid);
-    hand.DarkKan(pai);
+    hand.DarkKan(pai, playerState.IsOpen() || playerState.IsFever() || playerState.IsDoubleFever());
     squeal.AddDarkKan(pai);
     DeleteFirst();
     hand.CheckTenpai();
@@ -285,18 +285,43 @@ class Player {
     point -= 1000;
   }
 
+  void SetOpenReach() {
+    if (playerState.IsFirstTumo()) {
+      playerState.SetDoubleReach();
+    } else {
+      playerState.SetReach();
+    }
+    playerState.SetOpen();
+    point -= 1000;
+  }
+
   void SetReachRiver() {
     *std::prev(riverList.end()) += squealOffset;
     // Ç±Ç±Ç…èëÇ≠ÇÃÇÕâòÇ¢
     playerState.SetFirst();
+    if (playerState.IsOpen()) {
+      hand.SetOpenReach();
+    }
   }
 
   Pai GetGoalPai() const {
     return goalPai;
   }
 
+  void SetOpenRon() {
+    playerState.SetOpenRon();
+  }
+
+  void ResetOpenRon() {
+    playerState.ResetOpenRon();
+  }
+
+  void SetFlow() {
+    hand.SetFlow();
+  }
+
  private:
-  void Init(std::vector<Pai> &&firstPai, Wind wind) {
+  void Init(HandVector &&firstPai, Wind wind) {
     hand.Init(std::move(firstPai));
     squeal.Init();
     riverList.clear();

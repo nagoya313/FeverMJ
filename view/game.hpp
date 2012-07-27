@@ -74,7 +74,6 @@ class Game : boost::noncopyable {
     squealView.AllReset();
     statusView.SetResult(true);
     resultView.SetFlowSet(action);
-    playersView.SetFlowSet();
     notSquealButton.SetHide(true);
   }
 
@@ -95,7 +94,6 @@ class Game : boost::noncopyable {
   void SetStart() {
     statusView.SetResult(false);
     resultView.SetStart();
-    playersView.SetStart();
     notSquealButton.SetHide(false);
   }
 

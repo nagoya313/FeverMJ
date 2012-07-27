@@ -102,12 +102,11 @@ class Self : boost::noncopyable {
     const bool checkReach = !(reachIndex && !(reachIndex & (1 << selectedIndex)));
     for (int i = 0; i < size; ++i) {
       const int y = isSelect && i == selectedIndex && self.IsCutablePai(i) && checkReach ? 496 : 512;
-      const int imageHandle = isFlowSet ?
-                              self.IsTenpai() ?
-                              paiImage.GetUpHandle(self.GetHandPai(i)) :
-                              paiImage.GetBackHandle(0) :
-                              paiImage.GetHandHandle(self.GetHandPai(i));
-      DrawGraph(80 + 33 * i, y, imageHandle, TRUE);
+      const auto pai = self.GetHandPai(i);
+      const int handle = pai != Model::Pai::Invalid ?
+                         pai >= Model::squealOffset ?
+                         paiImage.GetUpHandle(pai % Model::squealOffset) : paiImage.GetHandHandle(pai) : paiImage.GetBackHandle(0);
+      DrawGraph(80 + 33 * i, y, handle, TRUE);
     }
     const Model::Pai tumo = self.GetTumo();
     if (tumo != Model::Pai::Invalid) {

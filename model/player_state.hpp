@@ -17,6 +17,18 @@ class PlayerState {
     state |= DoubleReach | ReachFirstTumo;
   }
 
+  void SetOpen() {
+    state |= Open;
+  }
+
+  void SetOpenRon() {
+    state |= OpenRon;
+  }
+
+  void ResetOpenRon() {
+    state &= ~OpenRon;
+  }
+
   void SetFirst() {
     state |= ReachFirstTumo;
   }
@@ -96,6 +108,10 @@ class PlayerState {
   bool IsFuriten() const {
     return state & Furiten;
   }
+
+  bool IsOpenRon() const {
+    return state & OpenRon;
+  }
  
  private:
   enum : std::uint32_t {
@@ -110,7 +126,8 @@ class PlayerState {
     Menzen = 1 << 8,
     Open = 1 << 9,
     TumoGoal = 1 << 10,
-    ReachFirstTumo = 1 << 11
+    ReachFirstTumo = 1 << 11,
+    OpenRon = 1 << 12
   };
   
   std::uint32_t state;

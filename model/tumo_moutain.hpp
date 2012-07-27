@@ -32,12 +32,10 @@ class TumoMountain {
     return oneMountain;
   }
 
-  std::vector<Pai> PopFirstPais() {
+  HandVector PopFirstPais() {
     assert(mountain.size() >= 13);
-    std::vector<Pai> firstPai(mountain.begin(),
-                              std::next(mountain.begin(), 13));
-    mountain.erase(mountain.begin(),
-                   std::next(mountain.begin(), 13));
+    HandVector firstPai(mountain.begin(), std::next(mountain.begin(), 13));
+    mountain.erase(mountain.begin(), std::next(mountain.begin(), 13));
     return firstPai;
   }
 
