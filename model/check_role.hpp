@@ -249,7 +249,7 @@ void CheckReachRole(const HandCommonRole hand, RoleResult &result) {
     result.AddRole(Role::DoubleReach, 2);
   }
   if (hand.IsOpen()) {
-    result.AddRole(Role::Open, 2);
+    result.AddRole(Role::Open, 1);
     if (hand.IsOpenRon()) {
       result.AddRole(Role::OpenRon, 11);
     }

@@ -36,8 +36,8 @@ class Players {
                                        //{Pai::P1, Pai::P1, Pai::P1, Pai::P1, Pai::P2, Pai::P3, Pai::S1, Pai::S2, Pai::S3, Pai::S6, Pai::S7, Pai::Center, Pai::Center},
                                        //{Pai::P2, Pai::P2, Pai::P2, Pai::P7, Pai::P7, Pai::P7, Pai::P8, Pai::S5, Pai::S6, Pai::S7, Pai::Center, Pai::Center, Pai::Center},
                                        //{Pai::M1, Pai::M1, Pai::M1, Pai::M9, Pai::M9, Pai::M9, Pai::P1, Pai::P1, Pai::P1, Pai::P5, Pai::West, Pai::West, Pai::West},
-                                       {Pai::P1, Pai::P2, Pai::P3, Pai::P4, Pai::P7, Pai::P7, Pai::P7, Pai::S2, Pai::S3, Pai::S4, Pai::S7, Pai::S7, Pai::S7},
-                                       //field.GetFirstPais(),
+                                       //{Pai::P1, Pai::P2, Pai::P3, Pai::P4, Pai::P7, Pai::P7, Pai::P7, Pai::S2, Pai::S3, Pai::S4, Pai::S7, Pai::S7, Pai::S7},
+                                       field.GetFirstPais(),
                                        GetStartWind(field, Wind::South));
     players[House::Down].GameStartInit(field.GetFirstPais(), GetStartWind(field, Wind::West));
   }

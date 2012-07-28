@@ -246,7 +246,7 @@ class Player {
       int doraCount = 0;
       const auto doraList = field.GetDoraList(false);
       for (const int pai : riverList) {
-        if (IsTyuntyanPai(pai)) {
+        if (IsTyuntyanPai(pai % squealOffset)) {
           return boost::none;
         }
         doraCount += boost::count(doraList, static_cast<Pai>(pai));

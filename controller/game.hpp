@@ -213,7 +213,7 @@ class Game : boost::noncopyable {
         }, View::MenuMode::EraseNorth);
       }
     }
-    if (!players[Model::House::Self].IsFever() && (point || isReachKanEnable || isEraseNorthEnable)) {
+    if (!(players[Model::House::Self].IsFever() && point) && (point || isReachKanEnable || isEraseNorthEnable)) {
       gameView.SetMenuMode([this] {
         SelfDiscardPai(-1, false);
         gameView.SetWaitMode();
