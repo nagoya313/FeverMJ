@@ -3,6 +3,7 @@
 #include <functional>
 #include <DxLib.h>
 #include <boost/noncopyable.hpp>
+#include <boost/optional.hpp>
 #include "button.hpp"
 #include "../model/field.hpp"
 #include "../model/house.hpp"
@@ -20,6 +21,8 @@ class Result : boost::noncopyable {
             const Utility::PaiImage &paiImage) {
     if (isFlowSet) {
       DrawFlowSet(players, input);
+    } else if (isFeverResult) {
+      DrawFeverResult(players, input);
     } else if (isGoal) {
       DrawGoal(field, players, input, paiImage);
     }
@@ -28,6 +31,13 @@ class Result : boost::noncopyable {
   template <typename Action>
   void SetFlowSet(Action action) {
     isFlowSet = true;
+    nextGameButton.SetAction(action);
+    nextGameButton.SetHide(false);
+  }
+
+  template <typename Action>
+  void SetFeverResult(Action action) {
+    isFeverResult = true;
     nextGameButton.SetAction(action);
     nextGameButton.SetHide(false);
   }
@@ -53,6 +63,7 @@ class Result : boost::noncopyable {
   }
 
   void SetStart() {
+    isFeverResult = false;
     isFlowSet = false;
     isGoal = false;
     nextGameButton.SetHide(true);
@@ -61,6 +72,9 @@ class Result : boost::noncopyable {
  private:
   static DWORD GetPointColor(int point) {
     return point >= 0 ? GetColor(255, 255, 255) : GetColor(255, 0, 0);
+  }
+
+  void DrawGoalRiver(const Model::Player &player, const Utility::PaiImage &paiImage) {
   }
 
   void DrawGoalHand(const Model::Player &player, const Utility::PaiImage &paiImage) {
@@ -85,14 +99,15 @@ class Result : boost::noncopyable {
   }
 
   void DrawRole(const Model::Players &players) {
-    DrawFormatString(32, 120, GetColor(255, 255, 255), "%d符 %d翻", point.GetHu(), point.GetHan());
+    assert(point);
+    DrawFormatString(32, 120, GetColor(255, 255, 255), "%d符 %d翻", point->GetHu(), point->GetHan());
     DrawPoint(players);
     int y = 0;
-    const auto role = point.GetRole();
+    const auto role = point->GetRole();
     for (std::uint64_t i = 0LL; i < 53LL; ++i) {
       if (role & (1LL << i)) {
         if (i == 52L) {
-          DrawFormatString(32, 152 + y * 32, GetColor(255, 255, 255), "ドラ　%d\n", point.GetDoraCount());
+          DrawFormatString(32, 152 + y * 32, GetColor(255, 255, 255), "ドラ　%d\n", point->GetDoraCount());
         } else {
           DrawFormatString(32, 152 + y * 32, GetColor(255, 255, 255), "%s\n", Model::roleString[i]);
         }
@@ -117,8 +132,12 @@ class Result : boost::noncopyable {
     SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
     DrawBox(0, 0, 800, 600, GetColor(0, 0, 0), TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    DrawString(380, 8, isTumo ? "ツモ" : "ロン", GetColor(255, 255, 255));
-    DrawGoalHand(players[goalHouse], paiImage);
+    if (point->GetRole() & Model::Role::LimitHandSink) {
+      DrawGoalRiver(players[goalHouse], paiImage);
+    } else {
+      DrawString(380, 8, isTumo ? "ツモ" : "ロン", GetColor(255, 255, 255));
+      DrawGoalHand(players[goalHouse], paiImage);
+    }
     DrawDora(field, players[goalHouse], paiImage);
     DrawRole(players);
     nextGameButton.Update(input);
@@ -131,6 +150,21 @@ class Result : boost::noncopyable {
     DrawString(88, 72, "流局", GetColor(255, 255, 255)); 
     DrawPoint(players);
     nextGameButton.Update(input);
+  }
+
+  void DrawFeverResult(const Model::Players &players, const Controller::Input &input) {
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
+    DrawBox(80, 64, 720, 500, GetColor(0, 0, 0), TRUE);
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    DrawString(88, 72, "結果", GetColor(255, 255, 255)); 
+    DrawFeverPoint(players);
+    nextGameButton.Update(input);
+  }
+
+  void DrawFeverPoint(const Model::Players &players) {
+    DrawFormatString(280, 188, GetColor(255, 255, 255), "上家：%d", players[Model::House::Up].GetPoint());
+    DrawFormatString(280, 260, GetColor(255, 255, 255), "自分：%d", players[Model::House::Self].GetPoint());
+    DrawFormatString(280, 330, GetColor(255, 255, 255), "下家：%d", players[Model::House::Down].GetPoint());
   }
 
   void DrawPoint(const Model::Players &players) {
@@ -146,12 +180,13 @@ class Result : boost::noncopyable {
   }
 
   std::array<int, 3> variationPoints;
+  bool isFeverResult = false;
   bool isFlowSet = false;
   bool isGoal = false;
   bool isTumo = false;
   Model::House goalHouse;
-  Model::Point point;
-  Button nextGameButton{550, 420, "次の局"};
+  boost::optional<Model::Point> point;
+  Button nextGameButton{550, 420, "次"};
 };
 }}
 

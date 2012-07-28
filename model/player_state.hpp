@@ -1,12 +1,18 @@
 #ifndef FEVERMJ_MODEL_PLAYER_STATE_HPP_
 #define FEVERMJ_MODEL_PLAYER_STATE_HPP_
 #include <cstdint>
+#include "wind.hpp"
 
 namespace FeverMJ { namespace Model {
 class PlayerState {
  public:
-  void Init() {
+  void Init(Wind wind) {
     state = Menzen | FirstTumo;
+    selfWind = wind;
+  }
+
+  Wind GetSelfWind() const {
+    return selfWind;
   }
  
   void SetReach() {
@@ -19,6 +25,14 @@ class PlayerState {
 
   void SetOpen() {
     state |= Open;
+  }
+
+  void SetFever() {
+    state |= Fever;
+  }
+
+  void SetDoubleFever() {
+    state |= DoubleFever;
   }
 
   void SetOpenRon() {
@@ -47,10 +61,6 @@ class PlayerState {
   
   void ResetFuriten() {
     state &= ~Furiten;
-  }
-  
-  void SetTumoGoal() {
-    state |= TumoGoal;
   }
 
   void SetRinsyanKaiho() {
@@ -83,10 +93,6 @@ class PlayerState {
   
   bool IsDoubleFever() const {
     return state & DoubleFever;
-  }
-  
-  bool IsTumoGoal() const {
-    return state & TumoGoal;
   }
   
   bool IsTyankan() const {
@@ -125,12 +131,12 @@ class PlayerState {
     FirstTumo = 1 << 7,
     Menzen = 1 << 8,
     Open = 1 << 9,
-    TumoGoal = 1 << 10,
-    ReachFirstTumo = 1 << 11,
-    OpenRon = 1 << 12
+    ReachFirstTumo = 1 << 10,
+    OpenRon = 1 << 11
   };
   
   std::uint32_t state;
+  Wind selfWind;
 };
 }}
 

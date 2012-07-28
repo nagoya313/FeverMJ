@@ -134,6 +134,11 @@ bool IsRolePai(int pai) {
 }
 
 inline
+bool IsStraightEnablePai(int pai) {
+  return pai >= Pai::P1 && pai <= Pai::S9;
+}
+
+inline
 Pai GetDora(Pai displayDora) {
   assert(displayDora != Pai::Invalid);
   switch (displayDora) {

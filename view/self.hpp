@@ -99,6 +99,7 @@ class Self : boost::noncopyable {
   void DrawHand(const Controller::Input &input, const Model::Player &self, const Utility::PaiImage &paiImage) {
     const int size = self.GetHandSize();
     const int selectedIndex = SelectedPaiIndex(input.GetPoint(), size);
+    //FEVERMJ_LOG("ÉäÅ[É` %x\n, ", reachIndex);
     const bool checkReach = !(reachIndex && !(reachIndex & (1 << selectedIndex)));
     for (int i = 0; i < size; ++i) {
       const int y = isSelect && i == selectedIndex && self.IsCutablePai(i) && checkReach ? 496 : 512;

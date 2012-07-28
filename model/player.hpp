@@ -3,11 +3,14 @@
 #include <cstdint>
 #include <array>
 #include <vector>
+#include <boost/optional.hpp>
+#include "check_goal.hpp"
 #include "field.hpp"
 #include "hand.hpp"
 #include "house.hpp"
 #include "pai.hpp"
 #include "player_state.hpp"
+#include "reach.hpp"
 #include "squeal.hpp"
 #include "wind.hpp"
 #include "../utility/log.hpp"
@@ -21,11 +24,11 @@ class Player {
   }
 
   void ContinueSetInit(HandVector &&firstPai) {
-    Init(std::move(firstPai), selfWind);
+    Init(std::move(firstPai), GetWind());
   }
 
   void NextSetInit(HandVector &&firstPai) {
-    Init(std::move(firstPai), GetPrevWind(selfWind));
+    Init(std::move(firstPai), GetPrevWind(GetWind()));
   }
 
   void DeleteFirst() {
@@ -37,25 +40,25 @@ class Player {
     furitenList.push_back(pai);
   }
 
-  Point Ron(Pai pai, Field &field) {
-    if (hand.GetWaitPais() & (1 << pai) && !playerState.IsFuriten()) {
+  boost::optional<Point> Ron(Pai pai, Field &field) {
+    CheckHuriten();
+    if (hand.IsWaitPai(pai) && !playerState.IsFuriten()) {
       FEVERMJ_LOG("ÉçÉìÇ¡ÇΩÅH\n");
       goalPai = pai;
-      return hand.IsRonGoal(pai, selfWind, squeal, field, playerState);
+      return IsRonGoal(pai, hand, squeal, field, playerState);
     }
-    return {};
+    return boost::none;
   }
 
-  Point Tumo(Field &field) {
-    return Tumo(field.GetTumoPai(), field);
+  boost::optional<Point> Tumo(Field &field) {
+    return Tumo(field, false);
   }
 
   Pai TumoCut() {
-    const Pai pai = hand.TumoCut();
+    const auto pai = hand.TumoCut();
     DeleteFirst();
     riverList.push_back(pai);
     hand.CheckTenpai();
-    CheckHuriten();
     return pai;
   }
 
@@ -64,16 +67,15 @@ class Player {
     DeleteFirst();
     riverList.push_back(pai);
     hand.CheckTenpai();
-    CheckHuriten();
     notSelectableBits = 0x0;
     return pai;
   }
 
-  Point EraseNorth(Field &field) {
+  boost::optional<Point> EraseNorth(Field &field) {
     hand.EraseNorth();
     squeal.AddNorth();
     DeleteFirst();
-    return RinsyanTumo(field);
+    return Tumo(field, true);
   }
 
   void Ti(Pai squealPai, const std::pair<Pai, Pai> &pais) {
@@ -105,26 +107,26 @@ class Player {
     notSelectableBits |= 1 << pai;
   }
 
-  Point DarkKan(Pai pai, Field &field) {
+  boost::optional<Point> DarkKan(Pai pai, Field &field) {
     assert(pai != Pai::Invalid);
     hand.DarkKan(pai, playerState.IsOpen() || playerState.IsFever() || playerState.IsDoubleFever());
     squeal.AddDarkKan(pai);
     DeleteFirst();
     hand.CheckTenpai();
     playerState.SetRinsyanKaiho();
-    return RinsyanTumo(field);
+    return Tumo(field, true);
   }
 
-  Point AddKan(Pai pai, Field &field) {
+  boost::optional<Point> AddKan(Pai pai, Field &field) {
     assert(pai != Pai::Invalid);
     hand.AddKan(pai);
     squeal.AddAddKan(pai);
     hand.CheckTenpai();
     playerState.SetRinsyanKaiho();
-    return RinsyanTumo(field);
+    return Tumo(field, true);
   }
 
-  Point LightKan(House house, Pai pai, Field &field) {
+  boost::optional<Point> LightKan(House house, Pai pai, Field &field) {
     assert(pai != Pai::Invalid);
     hand.LightKan(pai);
     squeal.AddLightKan(house, pai);
@@ -132,7 +134,7 @@ class Player {
     hand.CheckTenpai();
     playerState.SetRinsyanKaiho();
     playerState.Squeal();
-    return RinsyanTumo(field);
+    return Tumo(field, true);
   }
 
   std::vector<TiPair> GetTiCandidate(Pai pai) const {
@@ -141,7 +143,7 @@ class Player {
   }
 
   bool IsParent() const {
-    return selfWind == Wind::East;
+    return GetWind() == Wind::East;
   }
 
   int GetHandSize() const {
@@ -161,7 +163,7 @@ class Player {
   }
 
   Wind GetWind() const {
-    return selfWind;
+    return playerState.GetSelfWind();
   }
 
   PlayerState GetPlayerState() const {
@@ -239,41 +241,32 @@ class Player {
     return point - beforePoint;
   }
 
-  // TODO:PointÇï‘ÇµÇƒÉhÉâÇêîÇ¶ÇÈ
-  bool IsLimitHandSink() const {
+  boost::optional<Point> GetLimitHandSink(const Field &field) const {
     if (squealedList.empty()) {
+      int doraCount = 0;
+      const auto doraList = field.GetDoraList(false);
       for (const int pai : riverList) {
         if (IsTyuntyanPai(pai)) {
-          return false;
+          return boost::none;
         }
+        doraCount += boost::count(doraList, static_cast<Pai>(pai));
       }
-      return true;
+      doraCount += squeal.GetNorthCount();
+      return Point{RoleResult{doraCount}};
     }
-    return false;
+    return boost::none;
   }
 
   bool IsTenpai() const {
-    return hand.GetWaitPais();
+    return hand.IsTenpai();
   }
 
-  std::uint32_t GetReachEnableIndex() const {
-    if (playerState.IsMenzen()) {
-      const auto patern = hand.GetReachPatern();
-      std::uint32_t index = 0x0;
-      int i = 0;
-      for (const auto &p : patern) {
-        if (!p.empty()) {
-          if (i < hand.GetHandSize()) {
-            index |= 1 << i;
-          } else {
-            index |= 1 << 14;
-          }
-        }
-        ++i;
-      }
-      return index;
-    }
-    return 0x0;
+  bool IsFever() const {
+    return playerState.IsFever() || playerState.IsDoubleFever();
+  }
+
+  ReachIndex GetReachEnableIndex() const {
+    return playerState.IsMenzen() ? Model::GetReachEnableIndex(riverList, hand, squeal) : ReachIndex{};
   }
 
   void SetReach() {
@@ -286,20 +279,25 @@ class Player {
   }
 
   void SetOpenReach() {
-    if (playerState.IsFirstTumo()) {
-      playerState.SetDoubleReach();
-    } else {
-      playerState.SetReach();
-    }
+    SetReach();
     playerState.SetOpen();
-    point -= 1000;
+  }
+
+  void SetFeverReach() {
+    SetReach();
+    playerState.SetFever();
+  }
+
+  void SetDoubleFeverReach() {
+    SetReach();
+    playerState.SetDoubleFever();
   }
 
   void SetReachRiver() {
     *std::prev(riverList.end()) += squealOffset;
     // Ç±Ç±Ç…èëÇ≠ÇÃÇÕâòÇ¢
     playerState.SetFirst();
-    if (playerState.IsOpen()) {
+    if (playerState.IsOpen() || playerState.IsFever() || playerState.IsDoubleFever()) {
       hand.SetOpenReach();
     }
   }
@@ -316,7 +314,7 @@ class Player {
     playerState.ResetOpenRon();
   }
 
-  void SetFlow() {
+  void SetFlow(bool) {
     hand.SetFlow();
   }
 
@@ -327,27 +325,31 @@ class Player {
     riverList.clear();
     furitenList.clear();
     squealedList.clear();
-    selfWind = wind;
-    playerState.Init();
+    playerState.Init(wind);
     notSelectableBits = 0x0;
     hand.CheckTenpai();
+    AddPoint(0);
   }
 
   void CheckHuriten() {
+    if (IsFever()) {
+      playerState.ResetFuriten();
+      return;
+    }
     for (const int pai : riverList) {
-      if (hand.GetWaitPais() & (1 << pai)) {
+      if (hand.IsWaitPai(static_cast<Pai>(pai % squealOffset))) {
         playerState.SetFuriten();
         return;
       }
     }
     for (const Pai pai : squealedList) {
-      if (hand.GetWaitPais() & (1 << pai)) {
+      if (hand.IsWaitPai(pai)) {
         playerState.SetFuriten();
         return;
       }
     }
     for (const Pai pai : furitenList) {
-      if (hand.GetWaitPais() & (1 << pai)) {
+      if (hand.IsWaitPai(pai)) {
         playerState.SetFuriten();
         return;
       }
@@ -372,23 +374,20 @@ class Player {
     return false;
   }
 
-  Point RinsyanTumo(Field &field) {
-    return Tumo(field.GetRinsyan(), field);
-  }
-
-  Point Tumo(Pai pai, const Field &field) {
+  boost::optional<Point> Tumo(Field &field, bool isRinsyan) {
+    const auto pai = isRinsyan ? field.GetRinsyan() : field.GetTumoPai();
     assert(pai != Pai::Invalid);
     if (!playerState.IsReachTenpai()) {
       furitenList.clear();
     }
     hand.Tumo(pai);
-    FEVERMJ_LOG("ë“Çø:%x\n", hand.GetWaitPais());
-    if (hand.GetWaitPais() & (1 << hand.GetTumo())) {
+    FEVERMJ_LOG("ë“Çø:%x\n", hand.GetWait().waitPaiBits);
+    if (hand.IsWaitPai(hand.GetTumo())) {
       goalPai = pai;
       FEVERMJ_LOG("ÉcÉÇÇ¡ÇΩ\n");
-      return hand.IsTumoGoal(selfWind, squeal, field, playerState);
+      return IsTumoGoal(hand, squeal, field, playerState);
     }
-    return {};
+    return boost::none;
   }
   
   Hand hand;
@@ -399,7 +398,6 @@ class Player {
   std::vector<Pai> furitenList;
   std::vector<Pai> squealedList;
   PlayerState playerState;
-  Wind selfWind;
   std::uint32_t notSelectableBits;
   Pai goalPai;
 };

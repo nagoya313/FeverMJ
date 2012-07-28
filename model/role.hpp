@@ -121,44 +121,6 @@ enum Role : std::uint64_t {
 }
 
 using Role_::Role;
-
-struct RoleHandState {
-  int huCount = 0;
-  int darkTripleCount = 0;
-  std::uint32_t straightBits = 0x0;
-  std::uint32_t tripleBits = 0x0;
-  bool isTyanta = true;
-  int straightKindCount = 0x0;
-  int straightCount = 0x0;
-  Pai head = Pai::Invalid;
-  bool isKokusiMuso = false;
-  bool isSevenDouble = false;
-};
-
-struct RoleSquealState {
-  int huCount = 0;
-  int doraCount = 0;
-  int darkTripleCount = 0;
-  int quadrupleCount = 0;
-  std::uint32_t paiKindBits = 0x0;
-  std::uint32_t straightBits = 0x0;
-  std::uint32_t tripleBits = 0x0;
-  bool isTyanta = true;
-  bool hasStraight = false;
-  bool isBenz = false;
-};
-
-struct RoleResult {
-  int huCount = 0;
-  int hanCount = 0;
-  int doraCount = 0;
-  std::uint64_t roleBits = 0x0;
-};
-
-inline
-int RoundedUpHu(int hu) {
-  return (hu + 9) / 10 * 10;
-}
 }}
 
 #endif

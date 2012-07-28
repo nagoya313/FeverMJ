@@ -36,7 +36,8 @@ class Players {
                                        //{Pai::P1, Pai::P1, Pai::P1, Pai::P1, Pai::P2, Pai::P3, Pai::S1, Pai::S2, Pai::S3, Pai::S6, Pai::S7, Pai::Center, Pai::Center},
                                        //{Pai::P2, Pai::P2, Pai::P2, Pai::P7, Pai::P7, Pai::P7, Pai::P8, Pai::S5, Pai::S6, Pai::S7, Pai::Center, Pai::Center, Pai::Center},
                                        //{Pai::M1, Pai::M1, Pai::M1, Pai::M9, Pai::M9, Pai::M9, Pai::P1, Pai::P1, Pai::P1, Pai::P5, Pai::West, Pai::West, Pai::West},
-                                       field.GetFirstPais(),
+                                       {Pai::P1, Pai::P2, Pai::P3, Pai::P4, Pai::P7, Pai::P7, Pai::P7, Pai::S2, Pai::S3, Pai::S4, Pai::S7, Pai::S7, Pai::S7},
+                                       //field.GetFirstPais(),
                                        GetStartWind(field, Wind::South));
     players[House::Down].GameStartInit(field.GetFirstPais(), GetStartWind(field, Wind::West));
   }
@@ -76,27 +77,45 @@ class Players {
     players[payHouse].AddPoint(-getPoint);
   }
 
-  void SetFlowPoint() {
+  void SetFlowPoint(const Field &field) {
+    for (int i = 0; i < 3; ++i) {
+      if (players[i].IsFever()) {
+        players[i].AddPoint(6000);
+        players[GetUpHouse(static_cast<House>(i))].AddPoint(-3000);
+        players[GetDownHouse(static_cast<House>(i))].AddPoint(-3000);
+        players[i].SetFlow(false);
+        players[GetUpHouse(static_cast<House>(i))].SetFlow(true);
+        players[GetDownHouse(static_cast<House>(i))].SetFlow(true);
+        return;
+      }
+    }
+    for (int i = 0; i < 3; ++i) {
+      if (const auto point = players[i].GetLimitHandSink(field)) {
+        SetTumoPoint(static_cast<House>(i), *point, field);
+        players[i].SetFlow(true);
+        players[GetUpHouse(static_cast<House>(i))].SetFlow(true);
+        players[GetDownHouse(static_cast<House>(i))].SetFlow(true);
+        return;
+      }
+    }
     for (auto &player : players) {
       player.AddPoint(0);
-      player.SetFlow();
+      player.SetFlow(false);
+    }
+  }
+
+  void SetFuritenPai(Pai pai) {
+    for (auto &player : players) {
+      player.SetFuritenPai(pai);
     }
   }
 
   Pai TumoCut(House house) {
-    const auto pai = players[house].TumoCut();
-    for (auto &player : players) {
-      player.SetFuritenPai(pai);
-    }
-    return pai;
+    return players[house].TumoCut();
   }
 
   Pai HandCut(House house, int i) {
-    const auto pai = players[house].HandCut(i);
-    for (auto &player : players) {
-      player.SetFuritenPai(pai);
-    }
-    return pai;
+    return players[house].HandCut(i);
   }
 
   void AllDeleteFirst() {
@@ -111,7 +130,7 @@ class Players {
     players[squeareHouse].Pon(squearedHouse, pai);
   }
 
-  Point LightKan(House squeareHouse, House squearedHouse, Pai pai, Field &field) {
+  boost::optional<Point> LightKan(House squeareHouse, House squearedHouse, Pai pai, Field &field) {
     AllDeleteFirst();
     players[squearedHouse].PopBackRiver();
     return players[squeareHouse].LightKan(squearedHouse, pai, field);

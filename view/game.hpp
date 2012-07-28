@@ -70,10 +70,18 @@ class Game : boost::noncopyable {
   }
 
   template <typename Action>
-  void SetFlowSet(Action action, const std::array<int, 3> &variationPoints) {
+  void SetFlowSet(Action action) {
     squealView.AllReset();
     statusView.SetResult(true);
     resultView.SetFlowSet(action);
+    notSquealButton.SetHide(true);
+  }
+
+  template <typename Action>
+  void SetFeverResult(Action action) {
+    squealView.AllReset();
+    statusView.SetResult(true);
+    resultView.SetFeverResult(action);
     notSquealButton.SetHide(true);
   }
 

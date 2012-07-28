@@ -19,6 +19,8 @@ enum MenuMode : std::uint32_t {
    OpenReach,
    Ron,
    Cancel,
+   Fever,
+   DoubleFever,
    ModeMax,
 };
 }
@@ -28,10 +30,12 @@ using MenuMode_::MenuMode;
 class Squeal : boost::noncopyable {
  public:
   Squeal() {
-    constexpr int poses[] = {200, 0, 600, 100, 0, 300, 450, 500, 700};
-    const std::string texts[] = {"カン", "ペー", "ツモ", "ポン", "チー", "リーチ", "オープン", "ロン", "パス"};
+    constexpr int poses[] = {200, 0, 600, 100, 0, 300, 450, 500, 700, 300, 500};
+    const std::string texts[] = {
+      "カン", "ペー", "ツモ", "ポン", "チー", "リーチ", "オープン", "ロン", "パス", "フィーバー", "Ｗフィーバー"
+    };
     for (std::uint32_t i = 0; i < MenuMode::ModeMax; ++i) {
-      buttons.emplace_back(poses[i], 0, texts[i]);
+      buttons.emplace_back(poses[i], i < 9 ? 0 : 32, texts[i]);
     }
   }
 

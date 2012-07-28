@@ -2,45 +2,27 @@
 #define FEVERMJ_MODEL_POINT_HPP_
 #include <cmath>
 #include <cstdint>
-#include "player_state.hpp"
-#include "role.hpp"
+#include "role_result.hpp"
 
 namespace FeverMJ { namespace Model {
 class Point {
  public:
-  Point() = default;
-
-  explicit Point(const RoleResult &result) 
-      : han(result.hanCount), hu(result.huCount), dora(result.doraCount), roleList(result.roleBits) {}
+  explicit Point(const RoleResult &result) : roleResult(result) {}
 
   int GetHan() const {
-    return han;
+    return roleResult.GetHan();
   }
 
   int GetHu() const {
-    return hu;
+    return roleResult.GetHu();
   }
 
   int GetDoraCount() const {
-    return dora;
+    return roleResult.GetDoraCount();
   }
 
   std::uint64_t GetRole() const {
-    return roleList;
-  }
-
-  void CheckBounus(const PlayerState &playerState) {
-    if (playerState.IsReachFirstTumo()) {
-      roleList |= Role::First;
-      ++han;
-    }
-    if (dora) {
-      roleList |= Role::Dora;
-      if (roleList & Role::Benz) {
-        dora *= 3;
-      }
-      han += dora;
-    }
+    return roleResult.GetRoleBits();
   }
 
   int GetChildRonPoint(bool isBreakHouse) const {
@@ -60,21 +42,25 @@ class Point {
   }
 
   int GetBasicPoint() const {
-    if (han >= 20) {
-      return 8000 * (han / 10);
-    } else if (han >= 13) {
+    if (GetHan() >= 20) {
+      return 8000 * (GetHan() / 10);
+    } else if (GetHan() >= 13) {
       return 8000;
-    } else if (han >= 11) {
+    } else if (GetHan() >= 11) {
       return 6000;
-    } else if (han >= 8) {
+    } else if (GetHan() >= 8) {
       return 4000;
-    } else if (han >= 6) {
+    } else if (GetHan() >= 6) {
       return 3000;
-    } else if (han >= 5 || (han >=4 && hu >= 30) || (han >= 3 && hu >= 60)) {
+    } else if (GetHan() >= 5 || (GetHan() >=4 && GetHu() >= 30) || (GetHan() >= 3 && GetHu() >= 60)) {
       return 2000;
     } else {
-      return hu * std::pow(2, han + 2);
+      return GetHu() * std::pow(2, GetHan() + 2);
     }
+  }
+
+  void AddBounus(const PlayerState &playerState) {
+    roleResult.AddBounus(playerState);
   }
 
  private:
@@ -86,10 +72,7 @@ class Point {
     return h % 1000 > 500 ? (h / 1000 + 1) * 1000 : (h / 1000) * 1000;
   }
 
-  int han = 0;
-  int hu = 0;
-  int dora = 0;
-  std::uint64_t roleList = 0x0;
+  RoleResult roleResult;
 };
 }}
 

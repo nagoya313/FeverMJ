@@ -43,11 +43,7 @@ class Game : boost::noncopyable {
   void UpHouseTernWait() {
     // TODO:上家の処理待ちレスポンスを待つ
     const auto pai = players.TumoCut(Model::House::Up);
-    if (field.IsPaiEmpty()) {
-      sequence = [this] {FlowSet();};
-    } else {
-      sequence = [this, pai] {UpHouseSquealWait(pai);};
-    }
+    sequence = [this, pai] {UpHouseSquealWait(pai);};
   }
 
   void UpHouseSquealWait(Model::Pai pai) {
@@ -61,11 +57,7 @@ class Game : boost::noncopyable {
   
   void DownHouseTernWait() {
     const auto pai = players.TumoCut(Model::House::Down);
-    if (field.IsPaiEmpty()) {
-      sequence = [this] {FlowSet();};
-    } else {
-      sequence = [this, pai] {DownHouseSquealWait(pai);};
-    }
+    sequence = [this, pai] {DownHouseSquealWait(pai);};
   }
 
   void DownHouseSquealWait(Model::Pai pai) {
@@ -129,8 +121,13 @@ class Game : boost::noncopyable {
   void SelectRon(const Model::Point &point, Model::House house) {
     gameView.SetWaitMode();
     players.SetRonPoint(Model::House::Self, house, point, field);
-    gameView.SetSelectRon([this] {
-      GotoNextGame();
+    gameView.SetSelectRon([this, house] {
+      if (players[Model::House::Self].IsFever()) {
+        ThroughFever(house);
+        gameView.SetStart();
+      } else {
+        GotoNextGame();
+      }
     }, point, Model::House::Self);
     sequence = [] {};
   }
@@ -139,7 +136,18 @@ class Game : boost::noncopyable {
     gameView.SetWaitMode();
     players.SetTumoPoint(Model::House::Self, point, field);
     gameView.SetSelectTumo([this] {
-      GotoNextGame();
+      if (players[Model::House::Self].IsFever()) {
+        players[Model::House::Self].TumoCut();
+        if (field.IsPaiEmpty()) {
+          sequence = [this] {FlowSet();};
+        } else {
+        // TODO:切った牌を他家に送信
+          gameView.SetStart();
+          sequence = [this] {DownHouseTumoWait();};
+        }
+      } else {
+        GotoNextGame();
+      }
     }, point, Model::House::Self);
     sequence = [] {};
   }
@@ -166,12 +174,30 @@ class Game : boost::noncopyable {
     sequence = [] {};
   }
 
-  void CheckSelfReachHand(const Model::Point &point) {
-    const auto han = point.GetHan();
-    if (han) {
-      gameView.SetMenuMode([this, point] {
-        SelectTumo(point);
-      }, View::MenuMode::Tumo);
+  void SelectFeverReach(const Model::ReachIndex &index) {
+    gameView.SetWaitMode();
+    // TODO:リーチ不成立時のリーチ棒、供託棒の処理
+    gameView.SetSelectReachMode(index.fever, [this, index] (int i) {
+      if (index.doubleFever & (1 << (i < 0 ? 14 : i))) {
+        players[Model::House::Self].SetDoubleFeverReach();
+      } else {
+        players[Model::House::Self].SetFeverReach();
+      }
+      SelfDiscardPai(i, false);
+      players[Model::House::Self].SetReachRiver();
+    });
+    sequence = [] {};
+  }
+
+  void CheckSelfReachHand(const boost::optional<Model::Point> &point) {
+    if (point) {
+      if (players[Model::House::Self].IsFever()) {
+        SelectTumo(*point);
+      } else {
+        gameView.SetMenuMode([this, point] {
+          SelectTumo(*point);
+        }, View::MenuMode::Tumo);
+      }
     }
     bool isEraseNorthEnable = false;
     bool isReachKanEnable = false;
@@ -187,31 +213,40 @@ class Game : boost::noncopyable {
         }, View::MenuMode::EraseNorth);
       }
     }
-    if (han || isReachKanEnable || isEraseNorthEnable) {
+    if (!players[Model::House::Self].IsFever() && (point || isReachKanEnable || isEraseNorthEnable)) {
       gameView.SetMenuMode([this] {
         SelfDiscardPai(-1, false);
         gameView.SetWaitMode();
       }, View::MenuMode::Cancel);
       sequence = [] {};
     } else {
-      SelfDiscardPai(-1, false);
+      if (!(players[Model::House::Self].IsFever() && point)) {
+        SelfDiscardPai(-1, false);
+      }
     }
   }
 
-  void CheckSelfHand(bool isAddKan, const Model::Point &point) {
-    if (point.GetHan()) {
+  void CheckSelfHand(bool isAddKan, const boost::optional<Model::Point> &point) {
+    if (point) {
       gameView.SetMenuMode([this, point] {
-        SelectTumo(point);
+        SelectTumo(*point);
       }, View::MenuMode::Tumo);
     }
-    const std::uint32_t reachIndex = players[Model::House::Self].GetReachEnableIndex();
-    if (reachIndex && field.GetTumoMountainSize() > 2) {
-      gameView.SetMenuMode([this, reachIndex] {
-        SelectReach(reachIndex);
-      }, View::MenuMode::Reach);
-      gameView.SetMenuMode([this, reachIndex] {
-        SelectOpenReach(reachIndex);
-      }, View::MenuMode::OpenReach);
+    const auto reachIndex = players[Model::House::Self].GetReachEnableIndex();
+    if (field.GetTumoMountainSize() > 2) {
+      if (reachIndex.reach) {
+        gameView.SetMenuMode([this, reachIndex] {
+          SelectReach(reachIndex.reach);
+        }, View::MenuMode::Reach);
+        gameView.SetMenuMode([this, reachIndex] {
+          SelectOpenReach(reachIndex.reach);
+        }, View::MenuMode::OpenReach);
+      }
+      if (reachIndex.fever) {
+        gameView.SetMenuMode([this, reachIndex] {
+          SelectFeverReach(reachIndex);
+        }, View::MenuMode::Fever);
+      }
     }
     if (!field.IsPaiEmpty()) {
       if (field.GetDoraCount() <= 5 && players[Model::House::Self].IsDarkOrAddKanEnable() && !gameView.NotSquealButtonIsToggle()) {
@@ -260,29 +295,50 @@ class Game : boost::noncopyable {
   void ThroughSqueal(Model::House house, Model::Pai pai) {
     // パスしたことを牌を切った家に送信
     if (pai != Model::Pai::Invalid) {
-      players[Model::House::Self].SetFuritenPai(pai);
+      players.SetFuritenPai(pai);
     }
-    if (house == Model::House::Up) {
-      sequence = [this] {SelfTumo();};
+    if (field.IsPaiEmpty()) {
+      sequence = [this] {FlowSet();};
     } else {
-      sequence = [this] {UpHouseTumoWait();};
+      if (house == Model::House::Up) {
+        sequence = [this] {SelfTumo();};
+      } else {
+        sequence = [this] {UpHouseTumoWait();};
+      }
+    }
+  }
+
+  void ThroughFever(Model::House house) {
+    if (field.IsPaiEmpty()) {
+      sequence = [this] {FlowSet();};
+    } else {
+      if (house == Model::House::Up) {
+        sequence = [this] {SelfTumo();};
+      } else {
+        sequence = [this] {UpHouseTumoWait();};
+      }
     }
   }
 
   void CheckSelfSqueal(Model::House house, Model::Pai pai) {
-    const bool isPonEnable = !players[Model::House::Self].GetPlayerState().IsReachTenpai() && players[Model::House::Self].IsPonEnable(pai)  && !gameView.NotSquealButtonIsToggle();
-    const bool isKanEnable = !players[Model::House::Self].GetPlayerState().IsReachTenpai() && players[Model::House::Self].IsLightKanEnable(pai)  && !gameView.NotSquealButtonIsToggle();
-    const auto tiList = !players[Model::House::Self].GetPlayerState().IsReachTenpai() && house == Model::House::Up && !gameView.NotSquealButtonIsToggle() ?
+    const bool isPonEnable = !field.IsPaiEmpty() && !players[Model::House::Self].GetPlayerState().IsReachTenpai() && players[Model::House::Self].IsPonEnable(pai)  && !gameView.NotSquealButtonIsToggle();
+    const bool isKanEnable = !field.IsPaiEmpty() && !players[Model::House::Self].GetPlayerState().IsReachTenpai() && players[Model::House::Self].IsLightKanEnable(pai)  && !gameView.NotSquealButtonIsToggle();
+    const auto tiList = !field.IsPaiEmpty() && !players[Model::House::Self].GetPlayerState().IsReachTenpai() && house == Model::House::Up && !gameView.NotSquealButtonIsToggle() ?
                         players[Model::House::Self].GetTiCandidate(pai) : std::vector<Model::TiPair>{};
     if (players[Model::House::Self].GetPlayerState().IsOpen() && !players[house].GetPlayerState().IsReachTenpai()) {
       players[Model::House::Self].SetOpenRon();
     }
     const auto point = players[Model::House::Self].Ron(pai, field);
     players[Model::House::Self].ResetOpenRon();
-    if (point.GetHan()) {
-      gameView.SetMenuMode([this, point, house] {
-        SelectRon(point, house);
-      }, View::MenuMode::Ron);
+    if (point) {
+      if (players[Model::House::Self].IsFever()) { 
+        SelectRon(*point, house);
+        sequence = [] {};
+      } else {
+        gameView.SetMenuMode([this, point, house] {
+          SelectRon(*point, house);
+        }, View::MenuMode::Ron);
+      }
     }
     if (isPonEnable) {
       gameView.SetMenuMode([this, pai, house] {
@@ -299,14 +355,16 @@ class Game : boost::noncopyable {
         SelectTi(pai, tiList);
       }, View::MenuMode::Ti);
     }
-    if (isPonEnable || isKanEnable || !tiList.empty() || point.GetHan()) {
+    if (!players[Model::House::Self].IsFever() && (isPonEnable || isKanEnable || !tiList.empty() || point)) {
       gameView.SetMenuMode([this, house, pai] {
         ThroughSqueal(house, pai);
         gameView.SetWaitMode();
       }, View::MenuMode::Cancel);
       sequence = [] {};
     } else {
-      ThroughSqueal(house, pai);
+      if (!(players[Model::House::Self].IsFever() && point)) {
+        ThroughSqueal(house, pai);
+      }
     }
   }
 
@@ -363,10 +421,16 @@ class Game : boost::noncopyable {
 
   void FlowSet() {
     // TODO:形式聴牌に対応
-    players.SetFlowPoint();
-    gameView.SetFlowSet([this] {
-      GotoNextGame();
-    }, {{0, 0, 0}});
+    if (players[Model::House::Self].IsFever() && players[Model::House::Self].GetDiffPoint()) {
+      gameView.SetFeverResult([this] {
+        GotoNextGame();
+      });
+    } else {
+      players.SetFlowPoint(field);
+      gameView.SetFlowSet([this] {
+        GotoNextGame();
+      });
+    }
     sequence = [] {};
   }
 

@@ -41,9 +41,9 @@ class TumoMountain {
 
   Pai PopTumoPai() {
     assert(!mountain.empty());
-    const Pai Pai = mountain[0];
+    const Pai pai = mountain[0];
     mountain.pop_front();
-    return Pai;
+    return pai;
   }
 
   int GetMountainSize() const {

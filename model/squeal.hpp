@@ -2,11 +2,12 @@
 #define FEVERMJ_MODEL_SQUEAL_HPP_
 #include <cassert>
 #include <cstdint>
-#include <algorithm>
 #include <vector>
 #include "house.hpp"
 #include "pai.hpp"
 #include "role.hpp"
+#include "squeal_role.hpp"
+#include "../utility/algtorithm.hpp"
 
 namespace FeverMJ { namespace Model {
 class Squeal {
@@ -61,9 +62,7 @@ class Squeal {
   void AddAddKan(Pai pai) {
     ponBits &= ~(1 << pai);
     lightKanBits |= 1 << pai;
-    const auto it = std::find(squealImageList.begin(),
-                              squealImageList.end(),
-                              pai + squealOffset);
+    const auto it = boost::find(squealImageList, pai + squealOffset);
     assert(it != squealImageList.end());
     *it += squealOffset;
   }
@@ -93,33 +92,8 @@ class Squeal {
     return ponBits & (1 << pai);
   }
 
-  RoleSquealState GetRoleState(const DoraVector &doras) const {
-    RoleSquealState role = {};
-    role.isTyanta = true;
-    int darkKanCount = 0;
-    int lightKanCount = 0;
-    for (int i = 0; i < paiKindMax; ++i) {
-      if (tiBits & (1 << i)) {
-        CheckTiRoleState(doras, i, role);
-      }
-      if (ponBits & (1 << i)) {
-        CheckPonRoleState(doras, i, role);
-      } else if (darkKanBits & (1 << i)) {
-        ++darkKanCount;
-        CheckKanRoleState(doras, i, 16, role);
-      } else if (lightKanBits & (1 << i)) {
-        ++lightKanCount;
-        CheckKanRoleState(doras, i, 8, role);
-      }
-    }
-    role.doraCount += northCount;
-    role.darkTripleCount = darkKanCount;
-    role.quadrupleCount = darkKanCount + lightKanCount;
-    role.tripleBits = ponBits | darkKanBits | lightKanBits;
-    role.paiKindBits |= role.tripleBits;
-    assert(role.darkTripleCount >= 0 && role.darkTripleCount <= 4);
-    assert(role.quadrupleCount >= 0 && role.quadrupleCount <= 4);
-    return role;
+  SquealRole GetSquealRole(const DoraVector &doras) const {
+    return SquealRole{tiBits, ponBits, darkKanBits, lightKanBits, northCount, doras};
   }
 
   int GetSquealImageHandle(int i) const {
@@ -130,56 +104,19 @@ class Squeal {
     return squealImageList.size();
   }
 
+  bool HasSevenPinzu() const {
+    return darkKanBits & (1 << Pai::P7);
+  }
+
+  bool HasSevenSozu() const {
+    return darkKanBits & (1 << Pai::S7);
+  }
+
+  int GetNorthCount() const {
+    return northCount;
+  }
+
  private:
-  void CheckTiRoleState(const DoraVector &doras, int pai, RoleSquealState &role) const {
-    role.paiKindBits |= (1 << pai) | (1 << (pai + 1)) | (1 << (pai + 2));
-    for (int i = 0; i < 3; ++i) {
-      for (const Pai dora : doras) {
-        if (pai + i == dora) {
-          ++role.doraCount;
-        }
-      }
-    }
-    const int number = GetNumber(pai);
-    if (number > 0 && number < 6) {
-      role.isTyanta = false;
-    }
-    if (!(number % 3)) {
-      role.straightBits |= 1 << (3 * GetColor(pai) + number / 3);
-    }
-    role.hasStraight = true;
-  }
-
-  void CheckPonKanRoleState(int pai, int hu, RoleSquealState &role) const {
-    if (IsTyuntyanPai(pai)) {
-      role.isTyanta = false;
-      role.huCount += hu;
-    } else {   
-      role.huCount += hu * 2;
-    }
-  }
-
-  void CheckPonRoleState(const DoraVector &doras, int pai, RoleSquealState &role) const {
-    CheckPonKanRoleState(pai, 2, role);
-    for (const Pai dora : doras) {
-      if (pai == dora) {
-        role.doraCount += 3;
-      }
-    }
-  }
-
-  void CheckKanRoleState(const DoraVector &doras, int pai, int hu, RoleSquealState &role) const {
-    CheckPonKanRoleState(pai, hu, role);
-    for (const Pai dora : doras) {
-      if (pai == dora) {
-        role.doraCount += 4;
-      }
-    }
-    if (pai == Pai::S8) {
-      role.isBenz = true;
-    }
-  }
-
   int northCount;
   std::uint32_t ponBits;
   std::uint32_t tiBits;
