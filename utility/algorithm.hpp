@@ -3,7 +3,9 @@
 #include <boost/algorithm/cxx11/all_of.hpp>
 #include <boost/algorithm/cxx11/any_of.hpp>
 #include <boost/algorithm/cxx11/copy_if.hpp>
+#include <boost/algorithm/cxx11/none_of.hpp>
 #include <boost/range/algorithm/count.hpp>
+#include <boost/range/algorithm/count_if.hpp>
 #include <boost/range/algorithm/equal_range.hpp>
 #include <boost/range/algorithm/find.hpp>
 #include <boost/range/algorithm/lower_bound.hpp>
@@ -16,6 +18,7 @@ namespace boost {
 using algorithm::all_of;
 using algorithm::any_of;
 using algorithm::copy_if;
+using algorithm::none_of;
 }
 
 #endif

@@ -7,24 +7,29 @@
 #include "pai.hpp"
 #include "role.hpp"
 #include "squeal_role.hpp"
-#include "../utility/algtorithm.hpp"
+#include "../utility/algorithm.hpp"
 
 namespace FeverMJ { namespace Model {
 class Squeal {
  public:
   void Init() {
-    northCount = ponBits = tiBits = darkKanBits = lightKanBits = 0;
+    kind = {};
+    ponBits = tiBits = darkKanBits = lightKanBits = 0x0;
     squealImageList.clear();
   }
 
   void AddNorth() {
-    ++northCount;
-    assert(northCount >= 0 && northCount <= 4);
+    ++kind[Pai::North];
     squealImageList.push_back(Pai::North);
+  }
+
+  int GetNorthCount() const {
+    return kind[Pai::North];
   }
 
   void AddPon(House house, Pai pai) {
     assert(pai != Pai::Invalid);
+    kind[pai] += 3;
     ponBits |= 1 << pai;
     if (house == House::Down) {
       squealImageList.push_back(pai + squealOffset);
@@ -39,11 +44,14 @@ class Squeal {
     }
   }
 
-  void AddTi(Pai squealPai, const std::pair<Pai, Pai> &pais) {
+  void AddTi(Pai squealPai, const TiPair &pais) {
     assert(squealPai != Pai::Invalid);
     assert(pais.first != Pai::Invalid);
     assert(pais.second != Pai::Invalid);
     assert(pais.first < pais.second);
+    ++kind[squealPai];
+    ++kind[pais.first];
+    ++kind[pais.second];
     tiBits |= 1 << std::min(squealPai, pais.first);
     squealImageList.push_back(pais.second);
     squealImageList.push_back(pais.first);
@@ -52,6 +60,7 @@ class Squeal {
 
   void AddDarkKan(Pai pai) {
     assert(pai != Pai::Invalid);
+    kind[pai] += 4;
     darkKanBits |= 1 << pai;
     squealImageList.push_back(Pai::Invalid);
     squealImageList.push_back(pai);
@@ -61,6 +70,7 @@ class Squeal {
 
   void AddAddKan(Pai pai) {
     ponBits &= ~(1 << pai);
+    ++kind[pai];
     lightKanBits |= 1 << pai;
     const auto it = boost::find(squealImageList, pai + squealOffset);
     assert(it != squealImageList.end());
@@ -68,6 +78,7 @@ class Squeal {
   }
 
   void AddLightKan(House house, Pai pai) {
+    kind[pai] += 4;
     lightKanBits |= 1 << pai;
     if (house == House::Down) {
       squealImageList.push_back(pai + squealOffset);
@@ -93,7 +104,11 @@ class Squeal {
   }
 
   SquealRole GetSquealRole(const DoraVector &doras) const {
-    return SquealRole{tiBits, ponBits, darkKanBits, lightKanBits, northCount, doras};
+    int doraCount = 0;
+    for (int i = 0; i < paiKindMax; ++i) {
+      doraCount += kind[i] * boost::count(doras, static_cast<Pai>(i));
+    }
+    return SquealRole{tiBits, ponBits, darkKanBits, lightKanBits, doraCount};
   }
 
   int GetSquealImageHandle(int i) const {
@@ -112,12 +127,12 @@ class Squeal {
     return darkKanBits & (1 << Pai::S7);
   }
 
-  int GetNorthCount() const {
-    return northCount;
+  PaiKindArray GetPaiKindArray() const {
+    return kind;
   }
 
  private:
-  int northCount;
+  PaiKindArray kind;
   std::uint32_t ponBits;
   std::uint32_t tiBits;
   std::uint32_t darkKanBits;

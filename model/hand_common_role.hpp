@@ -8,7 +8,7 @@
 #include "role.hpp"
 #include "wait_type.hpp"
 #include "wind.hpp"
-#include "../utility/algtorithm.hpp"
+#include "../utility/algorithm.hpp"
 #include "../utility/log.hpp"
 
 namespace FeverMJ { namespace Model {
@@ -79,7 +79,7 @@ class HandCommonRole {
     return doraCount;
   }
 
-  std::uint32_t GetPaiKindBits() const {
+  PaiKindBitset GetPaiKindBits() const {
     return paiKindBits;
   }
 
@@ -92,11 +92,11 @@ class HandCommonRole {
   }
 
  private:
-  static std::uint32_t GetPaiKindBits(const PaiKindArray &kind) {
-    std::uint32_t bits = 0x0;
+  static PaiKindBitset GetPaiKindBits(const PaiKindArray &kind) {
+    PaiKindBitset bits = 0x0;
     for (int i = 0; i < paiKindMax; ++i) {
       if (kind[i]) {
-        bits |= 1 << i;
+        bits |= (1 << i);
       }
     }
     FEVERMJ_LOG("Ží—Þ %x\n", bits);
@@ -114,7 +114,7 @@ class HandCommonRole {
   int handSize;
   int doraCount;
   bool isHaitei;
-  std::uint32_t paiKindBits = 0x0;
+  PaiKindBitset paiKindBits = 0x0;
   PlayerState state;
 };
 }}

@@ -3,7 +3,7 @@
 #include <vector>
 #include "squeal.hpp"
 #include "tenpai_patern.hpp"
-#include "../utility/algtorithm.hpp"
+#include "../utility/algorithm.hpp"
 #include "../utility/log.hpp"
 
 namespace FeverMJ { namespace Model {
@@ -50,7 +50,7 @@ ReachIndex GetReachEnableIndex(const std::vector<int> &riverList, const Hand &ha
       SetReachEnableIndex(ii, index);
       const auto pai = i == hand.GetHandSize() ? hand.GetTumo() : hand.GetHand(i);
       const auto wait = patern.waitPaiBits;
-      if (!(wait & (1 << pai)) && boost::all_of(riverList, [wait](int x) {return !(wait & (1 << x));})) {
+      if (!(wait & (1 << pai)) && boost::none_of(riverList, [wait](int x) {return wait & (1 << x);})) {
         const std::uint32_t f = CheckFever(patern.tenpaiPatern, squeal);
         if (f == 0x1 || f == 0x2) {
           SetFeverEnableIndex(ii, index);

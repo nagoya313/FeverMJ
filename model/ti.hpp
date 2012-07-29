@@ -3,7 +3,7 @@
 #include <cassert>
 #include <boost/optional.hpp>
 #include "pai.hpp"
-#include "../utility/algtorithm.hpp"
+#include "../utility/algorithm.hpp"
 
 namespace FeverMJ { namespace Model {
 inline

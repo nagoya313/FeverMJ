@@ -182,7 +182,7 @@ void CheckRole(const RoleTemp &temp, RoleResult &result) {
 }
 
 inline
-void CheckTanyaoBitsRole(std::uint32_t paiKindBits, RoleResult &result) {
+void CheckTanyaoBitsRole(PaiKindBitset paiKindBits, RoleResult &result) {
   if (!(paiKindBits & ~RoleBits::Tanyao)) {
     result.AddRole(Role::Tanyao, 1);
   } else if (!(paiKindBits & ~RoleBits::OldHead) && paiKindBits != RoleBits::OldHead) {
@@ -193,7 +193,7 @@ void CheckTanyaoBitsRole(std::uint32_t paiKindBits, RoleResult &result) {
 }
 
 inline
-void CheckNineTreasure(std::uint32_t paiKindBits, const PaiKindArray &kind, RoleResult &result) {
+void CheckNineTreasure(PaiKindBitset paiKindBits, const PaiKindArray &kind, RoleResult &result) {
   if ((paiKindBits == RoleBits::PinzuPure && kind[Pai::P1] >= 3 && kind[Pai::P9] >= 3) ||
       (paiKindBits == RoleBits::SozuPure && kind[Pai::S1] >= 3 && kind[Pai::S9] >= 3)) {
     result.AddRole(Role::NineTreasure, 13);
@@ -202,7 +202,7 @@ void CheckNineTreasure(std::uint32_t paiKindBits, const PaiKindArray &kind, Role
 
 inline
 void CheckSingleColorRole(const HandCommonRole &hand, const PaiKindArray &kind, const SquealRole &squeal, RoleResult &result) {
-  const std::uint32_t paiKindBits = hand.GetPaiKindBits() | squeal.GetPaiKindBits();
+  const auto paiKindBits = hand.GetPaiKindBits() | squeal.GetPaiKindBits();
   if (!(paiKindBits & ~RoleBits::WordSingle)) {
     result.AddRole(Role::WordColor, 13);
   } else if (!(paiKindBits & ~RoleBits::GreenSingle)) {
@@ -308,8 +308,8 @@ void PreCheckRole(const HandCommonRole hand, const SquealRole &squeal, RoleResul
 inline
 WaitPair GetTenpaiPatern(Pai pai, int size, PaiKindArray &kind) {
   --kind[pai];
-  const auto pair = GetWaitPai(kind, size == 13);
-  FEVERMJ_LOG("‘Ò‚¿ %x Œ` %d\n", pair.waitPaiBits, pair.tenpaiPatern.size());
+  const auto pair = GetWaitPai(kind, {}, size == 13);
+  FEVERMJ_LOG("‘Ò‚¿ %x Œ` %d Žè”v %d\n", pair.waitPaiBits, pair.tenpaiPatern.size(), size);
   ++kind[pai];
   return pair;
 }

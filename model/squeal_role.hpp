@@ -5,33 +5,32 @@
 #include <algorithm>
 #include "pai.hpp"
 #include "role.hpp"
+#include "../utility/algorithm.hpp"
 
 namespace FeverMJ { namespace Model {
 class SquealRole {
  public:
-  explicit SquealRole(std::uint32_t tiBits,
-                      std::uint32_t ponBits,
-                      std::uint32_t darkKanBits,
-                      std::uint32_t lightKanBits,
-                      int northCount,
-                      const DoraVector &doras) {
+  explicit SquealRole(PaiKindBitset tiBits,
+                      PaiKindBitset ponBits,
+                      PaiKindBitset darkKanBits,
+                      PaiKindBitset lightKanBits,
+                      int dora) : doraCount(dora) {
     int darkKanCount = 0;
     int lightKanCount = 0;
     for (int i = 0; i < paiKindMax; ++i) {
       if (tiBits & (1 << i)) {
-        CheckTiRoleState(doras, i);
+        CheckTiRoleState(i);
       }
       if (ponBits & (1 << i)) {
-        CheckPonRoleState(doras, i);
+        CheckPonRoleState(i);
       } else if (darkKanBits & (1 << i)) {
         ++darkKanCount;
-        CheckKanRoleState(doras, i, 16);
+        CheckKanRoleState(i, 16);
       } else if (lightKanBits & (1 << i)) {
         ++lightKanCount;
-        CheckKanRoleState(doras, i, 8);
+        CheckKanRoleState(i, 8);
       }
     }
-    doraCount += northCount;
     darkTripleCount = darkKanCount;
     quadrupleCount = darkKanCount + lightKanCount;
     tripleBits = ponBits | darkKanBits | lightKanBits;
@@ -52,11 +51,11 @@ class SquealRole {
     return isTyanta;
   }
 
-  std::uint32_t GetTripleBits() const {
+  PaiKindBitset GetTripleBits() const {
     return tripleBits;
   }
 
-  std::uint32_t GetStraightBits() const {
+  PaiKindBitset GetStraightBits() const {
     return straightBits;
   }
 
@@ -72,7 +71,7 @@ class SquealRole {
     return quadrupleCount;
   }
 
-  std::uint32_t GetPaiKindBits() const {
+  PaiKindBitset GetPaiKindBits() const {
     return paiKindBits;
   }
 
@@ -81,15 +80,8 @@ class SquealRole {
   }
 
  private:
-  void CheckTiRoleState(const DoraVector &doras, int pai) {
+  void CheckTiRoleState(int pai) {
     paiKindBits |= (1 << pai) | (1 << (pai + 1)) | (1 << (pai + 2));
-    for (int i = 0; i < 3; ++i) {
-      for (const Pai dora : doras) {
-        if (pai + i == dora) {
-          ++doraCount;
-        }
-      }
-    }
     const int number = GetNumber(pai);
     if (number > 0 && number < 6) {
       isTyanta = false;
@@ -109,22 +101,12 @@ class SquealRole {
     }
   }
 
-  void CheckPonRoleState(const DoraVector &doras, int pai) {
+  void CheckPonRoleState(int pai) {
     CheckPonKanRoleState(pai, 2);
-    for (const auto dora : doras) {
-      if (pai == dora) {
-        doraCount += 3;
-      }
-    }
   }
 
-  void CheckKanRoleState(const DoraVector &doras, int pai, int hu) {
+  void CheckKanRoleState(int pai, int hu) {
     CheckPonKanRoleState(pai, hu);
-    for (const auto dora : doras) {
-      if (pai == dora) {
-        doraCount += 4;
-      }
-    }
     if (pai == Pai::S8) {
       isBenz = true;
     }
@@ -134,9 +116,9 @@ class SquealRole {
   int doraCount = 0;
   int darkTripleCount = 0;
   int quadrupleCount = 0;
-  std::uint32_t tripleBits = 0x0;
-  std::uint32_t straightBits = 0x0;
-  std::uint32_t paiKindBits = 0x0;
+  PaiKindBitset tripleBits = 0x0;
+  PaiKindBitset straightBits = 0x0;
+  PaiKindBitset paiKindBits = 0x0;
   bool hasStraight = false;
   bool isTyanta = true;
   bool isBenz = false;

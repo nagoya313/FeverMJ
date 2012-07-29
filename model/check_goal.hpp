@@ -18,7 +18,7 @@
 #include "squeal_role.hpp"
 #include "tenpai_patern.hpp"
 #include "wind.hpp"
-#include "../utility/algtorithm.hpp"
+#include "../utility/algorithm.hpp"
 #include "../utility/log.hpp"
 
 namespace FeverMJ { namespace Model {

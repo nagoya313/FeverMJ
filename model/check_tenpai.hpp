@@ -6,7 +6,7 @@
 #include "pai.hpp"
 #include "role.hpp"
 #include "tenpai_patern.hpp"
-#include "../utility/algtorithm.hpp"
+#include "../utility/algorithm.hpp"
 
 namespace FeverMJ { namespace Model {
 struct WaitPair {
@@ -285,11 +285,12 @@ std::uint32_t GetNotHasTripleWaitPai(PaiKindArray &kind, std::vector<TenpaiPater
 }
 
 inline
-WaitPair GetWaitPai(PaiKindArray &kind, bool isHandCount13) {
+WaitPair GetWaitPai(PaiKindArray &kind, const PaiKindArray &squeal, bool isHandCount13) {
   std::uint32_t waitPaiBits = 0x0;
   std::vector<TenpaiPatern> tenpaiPatern;
   bool hasTriple = false;
   std::uint32_t paiKindBits = 0x0;
+  std::uint32_t enableWaitBits = ~static_cast<std::uint32_t>(0x0);
   for (int i = 0; i < paiKindMax; ++i) {
     if (kind[i]) {
       paiKindBits |= 1 << i;
@@ -297,13 +298,16 @@ WaitPair GetWaitPai(PaiKindArray &kind, bool isHandCount13) {
         hasTriple = true;
       }
     }
+    if (kind[i] + squeal[i] == 4) {
+      enableWaitBits &= ~(1 << i);
+    }
   }
   if (isHandCount13) {
     if ((waitPaiBits = GetKokusiMusoWaitPais(paiKindBits))) {
       TenpaiPatern kokusi;
       kokusi.SetKokusiMuso(waitPaiBits);
       tenpaiPatern.push_back(kokusi); 
-      return {waitPaiBits, tenpaiPatern};
+      return {waitPaiBits & enableWaitBits, tenpaiPatern};
     } else {
       waitPaiBits = GetSevenDoubleWaitPais(kind);
       if (waitPaiBits) {
@@ -320,7 +324,7 @@ WaitPair GetWaitPai(PaiKindArray &kind, bool isHandCount13) {
   } else {
     waitPaiBits = GetNotHasTripleWaitPai(kind, tenpaiPatern);
   }
-  return {waitPaiBits, tenpaiPatern};
+  return {waitPaiBits & enableWaitBits, tenpaiPatern};
 }
 }}
 

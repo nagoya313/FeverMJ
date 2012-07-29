@@ -154,6 +154,7 @@ class Game : boost::noncopyable {
 
   void SelectReach(std::uint32_t reachIndex) {
     gameView.SetWaitMode();
+    field.AddReachBar();
     // TODO:リーチ不成立時のリーチ棒、供託棒の処理
     gameView.SetSelectReachMode(reachIndex, [this] (int index) {
       players[Model::House::Self].SetReach();
@@ -165,6 +166,7 @@ class Game : boost::noncopyable {
 
   void SelectOpenReach(std::uint32_t reachIndex) {
     gameView.SetWaitMode();
+    field.AddReachBar();
     // TODO:リーチ不成立時のリーチ棒、供託棒の処理
     gameView.SetSelectReachMode(reachIndex, [this] (int index) {
       players[Model::House::Self].SetOpenReach();
@@ -176,6 +178,7 @@ class Game : boost::noncopyable {
 
   void SelectFeverReach(const Model::ReachIndex &index) {
     gameView.SetWaitMode();
+    field.AddReachBar();
     // TODO:リーチ不成立時のリーチ棒、供託棒の処理
     gameView.SetSelectReachMode(index.fever, [this, index] (int i) {
       if (index.doubleFever & (1 << (i < 0 ? 14 : i))) {
@@ -254,7 +257,7 @@ class Game : boost::noncopyable {
           SelectKan(isAddKan);
         }, View::MenuMode::Kan);
       }
-      if (players[Model::House::Self].GetPaiCount(Model::Pai::North) && !gameView.NotSquealButtonIsToggle()) {
+      if (players[Model::House::Self].GetPaiCount(Model::Pai::North)) {
         gameView.SetMenuMode([this, isAddKan] {
           SelectNorth(isAddKan);
         }, View::MenuMode::EraseNorth);
@@ -398,7 +401,9 @@ class Game : boost::noncopyable {
     if (players.HasFlyHouse()) {
       field.NextGameInit();
       GameStart();
-    // TODO:テンパイ続行
+    } else if (players.IsParentTenpai(field)) {
+      field.ContinueSetInit();
+      players.ContinueSetInit(field);
     } else {
       if (field.IsOLas()) {
         field.NextGameInit();
@@ -420,16 +425,21 @@ class Game : boost::noncopyable {
   }
 
   void FlowSet() {
-    // TODO:形式聴牌に対応
-    if (players[Model::House::Self].IsFever() && players[Model::House::Self].GetDiffPoint()) {
+    if (players[Model::House::Self].IsFever() && players[Model::House::Self].GetDiffPoint() != -1000) {
       gameView.SetFeverResult([this] {
         GotoNextGame();
       });
     } else {
-      players.SetFlowPoint(field);
-      gameView.SetFlowSet([this] {
-        GotoNextGame();
-      });
+      boost::optional<Model::Point> point;
+      if (const auto house = players.SetFlowPoint(field, point)) {
+        gameView.SetSelectTumo([this] {
+          GotoNextGame();
+        }, *point, *house);
+      } else {
+        gameView.SetFlowSet([this] {
+          GotoNextGame();
+        });
+      }
     }
     sequence = [] {};
   }

@@ -11,7 +11,7 @@
 #include "squeal.hpp"
 #include "ti.hpp"
 #include "wind.hpp"
-#include "../utility/algtorithm.hpp"
+#include "../utility/algorithm.hpp"
 #include "../utility/log.hpp"
 
 namespace FeverMJ { namespace Model {
@@ -146,8 +146,8 @@ class Hand {
     return Model::GetTiCandidate(kind, pai);
   }
 
-  void CheckTenpai() {
-    wait = Model::GetWaitPai(kind, hand.size() == 13);
+  void CheckTenpai(const PaiKindArray &squeal) {
+    wait = Model::GetWaitPai(kind, squeal, hand.size() == 13);
   }
 
   bool IsTenpai() const {
@@ -175,6 +175,12 @@ class Hand {
   void SetFlow() {
     for (auto &pai : hand) {
       pai = Pai::Invalid;
+    }
+  }
+
+  void SetTenpai() {
+    for (auto &pai : hand) {
+      pai += squealOffset;
     }
   }
 

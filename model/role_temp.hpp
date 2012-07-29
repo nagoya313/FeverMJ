@@ -36,7 +36,7 @@ class RoleTemp {
     return isRyanpeko;
   }
 
-  std::uint32_t GetTripleBits() const {
+  PaiKindBitset GetTripleBits() const {
     return tripleBits;
   }
 
@@ -56,11 +56,11 @@ class RoleTemp {
     return isMenzen;
   }
 
-  std::uint32_t GetPaiKindBits() const {
+  PaiKindBitset GetPaiKindBits() const {
     return paiKindBits;
   }
 
-  std::uint32_t GetStraightBits() const {
+  PaiKindBitset GetStraightBits() const {
     return straightBits;
   }
 
@@ -83,13 +83,13 @@ class RoleTemp {
  private:
   bool isIpeko;
   bool isRyanpeko;
-  std::uint32_t tripleBits;
+  PaiKindBitset tripleBits;
   Wind selfWind;
   Pai head;
   bool isTyanta;
   bool isMenzen;
-  std::uint32_t paiKindBits;
-  std::uint32_t straightBits;
+  PaiKindBitset paiKindBits;
+  PaiKindBitset straightBits;
   bool hasStraight;
   int darkTripleCount;
   int quadrupleCount;

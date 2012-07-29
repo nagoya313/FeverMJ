@@ -14,16 +14,12 @@ using House_::House;
 
 inline
 House GetUpHouse(House house) {
-  return house == House::Up ?
-         House::Down : house == House::Self ?
-                       House::Up : House::Self;
+  return house == House::Up ? House::Down : house == House::Self ? House::Up : House::Self;
 }
 
 inline
 House GetDownHouse(House house) {
-  return house == House::Up ?
-         House::Self : house == House::Self ?
-                       House::Down : House::Up;
+  return house == House::Up ? House::Self : house == House::Self ? House::Down : House::Up;
 }
 }}
 

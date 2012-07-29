@@ -85,6 +85,7 @@ constexpr int paiKindMax = 27;
 constexpr int squealOffset = 32;
 
 using PaiKindArray = std::array<int, paiKindMax>;
+using PaiKindBitset = std::uint32_t;
 using HandVector = std::vector<int>;
 using DoraVector = std::vector<Pai>;
 using TiPair = std::pair<Pai, Pai>;

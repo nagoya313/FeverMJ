@@ -16,9 +16,9 @@ class OneMountain {
 
   Pai PopRinsyanPai() {
     assert(mountain.size() > 10);
-    const Pai Pai = *std::prev(mountain.end());
+    const Pai pai = *std::prev(mountain.end());
     mountain.pop_back();
-    return Pai;
+    return pai;
   }
 
   void AddDora() {

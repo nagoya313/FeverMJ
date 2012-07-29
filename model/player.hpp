@@ -58,7 +58,7 @@ class Player {
     const auto pai = hand.TumoCut();
     DeleteFirst();
     riverList.push_back(pai);
-    hand.CheckTenpai();
+    hand.CheckTenpai(squeal.GetPaiKindArray());
     return pai;
   }
 
@@ -66,7 +66,7 @@ class Player {
     const Pai pai = hand.HandCut(i);
     DeleteFirst();
     riverList.push_back(pai);
-    hand.CheckTenpai();
+    hand.CheckTenpai(squeal.GetPaiKindArray());
     notSelectableBits = 0x0;
     return pai;
   }
@@ -75,6 +75,7 @@ class Player {
     hand.EraseNorth();
     squeal.AddNorth();
     DeleteFirst();
+    hand.CheckTenpai(squeal.GetPaiKindArray());
     return Tumo(field, true);
   }
 
@@ -112,7 +113,7 @@ class Player {
     hand.DarkKan(pai, playerState.IsOpen() || playerState.IsFever() || playerState.IsDoubleFever());
     squeal.AddDarkKan(pai);
     DeleteFirst();
-    hand.CheckTenpai();
+    hand.CheckTenpai(squeal.GetPaiKindArray());
     playerState.SetRinsyanKaiho();
     return Tumo(field, true);
   }
@@ -121,7 +122,7 @@ class Player {
     assert(pai != Pai::Invalid);
     hand.AddKan(pai);
     squeal.AddAddKan(pai);
-    hand.CheckTenpai();
+    hand.CheckTenpai(squeal.GetPaiKindArray());
     playerState.SetRinsyanKaiho();
     return Tumo(field, true);
   }
@@ -131,7 +132,7 @@ class Player {
     hand.LightKan(pai);
     squeal.AddLightKan(house, pai);
     DeleteFirst();
-    hand.CheckTenpai();
+    hand.CheckTenpai(squeal.GetPaiKindArray());
     playerState.SetRinsyanKaiho();
     playerState.Squeal();
     return Tumo(field, true);
@@ -261,6 +262,24 @@ class Player {
     return hand.IsTenpai();
   }
 
+  bool IsTypeTenpai(const Field &field) {
+    if (playerState.IsMenzen() && IsTenpai()) {
+      return true;
+    } else if (IsTenpai()) {
+      for (int i = 0; i < paiKindMax; ++i) {
+        hand.Tumo(static_cast<Pai>(i));
+        if (hand.IsWaitPai(static_cast<Pai>(i))) {
+          if (IsTumoGoal(hand, squeal, field, playerState)) {
+            hand.TumoCut();
+            return true;
+          }
+        }
+        hand.TumoCut();
+      }
+    }
+    return false;
+  }
+
   bool IsFever() const {
     return playerState.IsFever() || playerState.IsDoubleFever();
   }
@@ -275,7 +294,7 @@ class Player {
     } else {
       playerState.SetReach();
     }
-    point -= 1000;
+    AddPoint(-1000);
   }
 
   void SetOpenReach() {
@@ -314,8 +333,12 @@ class Player {
     playerState.ResetOpenRon();
   }
 
-  void SetFlow(bool) {
-    hand.SetFlow();
+  void SetFlow(bool f, const Field &field) {
+    if (f || !IsTypeTenpai(field)) {
+      hand.SetFlow();
+    } else {
+      hand.SetTenpai();
+    }
   }
 
  private:
@@ -327,7 +350,7 @@ class Player {
     squealedList.clear();
     playerState.Init(wind);
     notSelectableBits = 0x0;
-    hand.CheckTenpai();
+    hand.CheckTenpai({});
     AddPoint(0);
   }
 

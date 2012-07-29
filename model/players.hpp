@@ -1,6 +1,7 @@
 #ifndef FEVERMJ_MODEL_PLAYERS_HPP_
 #define FEVERMJ_MPDEL_PLAYERS_HPP_
 #include <array>
+#include <boost/optional.hpp>
 #include "field.hpp"
 #include "house.hpp"
 #include "pai.hpp"
@@ -26,7 +27,7 @@ class Players {
                                        //{Pai::P3, Pai::P3, Pai::P4, Pai::P4, Pai::P5, Pai::P5, Pai::P6, Pai::P6, Pai::P7, Pai::P8, Pai::P8, Pai::East, Pai::East},
                                        //{Pai::P1, Pai::P1, Pai::P1, Pai::P2, Pai::P2, Pai::P3, Pai::P3, Pai::P3, Pai::P7, Pai::P8, Pai::P9, Pai::East, Pai::East},
                                        //{Pai::M9, Pai::M9, Pai::S1, Pai::S1, Pai::S1, Pai::S2, Pai::S3, Pai::S4, Pai::S4, Pai::S5, Pai::S6, Pai::S7, Pai::S8},
-                                       //{Pai::M9, Pai::M9, Pai::P1, Pai::P9, Pai::S1, Pai::S9, Pai::East, Pai::South, Pai::West, Pai::North, Pai::White, Pai::From, Pai::Center},
+                                       //{Pai::M1, Pai::M1, Pai::M9, Pai::P1, Pai::S1, Pai::S9, Pai::East, Pai::South, Pai::West, Pai::North, Pai::North, Pai::From, Pai::Center},
                                        //{Pai::M1, Pai::M1, Pai::P3, Pai::P4, Pai::P5, Pai::P5, Pai::P6, Pai::P7, Pai::P8, Pai::P9, Pai::S3, Pai::S4, Pai::S5},
                                        //{Pai::M1, Pai::M1, Pai::M1, Pai::P3, Pai::P4, Pai::P5, Pai::P5, Pai::P7, Pai::P8, Pai::P9, Pai::S3, Pai::S4, Pai::S5},
                                        //{Pai::P1, Pai::P2, Pai::P3, Pai::P5, Pai::P6, Pai::P7, Pai::S2, Pai::S4, Pai::S5, Pai::S6, Pai::S7, Pai::S8, Pai::S9},
@@ -42,6 +43,12 @@ class Players {
     players[House::Down].GameStartInit(field.GetFirstPais(), GetStartWind(field, Wind::West));
   }
 
+  void ContinueSetInit(Field &field) {
+    players[Model::House::Up].ContinueSetInit(field.GetFirstPais());
+    players[Model::House::Self].ContinueSetInit(field.GetFirstPais());
+    players[Model::House::Down].ContinueSetInit(field.GetFirstPais());
+  }
+
   void NextSetInit(Field &field) {
     players[Model::House::Up].NextSetInit(field.GetFirstPais());
     players[Model::House::Self].NextSetInit(field.GetFirstPais());
@@ -52,7 +59,7 @@ class Players {
     return players[Model::House::Up].GetPoint() < 0 || players[Model::House::Self].GetPoint() < 0 || players[Model::House::Down].GetPoint() < 0;
   }
 
-  void SetTumoPoint(House house, const Point &point, const Field &field) {
+  void SetTumoPoint(House house, const Point &point, Field &field) {
     int getPoint = 0;
     House payHouse = GetDownHouse(house);
     for (int i = 0; i < 2; ++i) {
@@ -64,44 +71,69 @@ class Players {
       getPoint += -payPoint;
       payHouse = GetDownHouse(payHouse);
     }
-    players[house].AddPoint(getPoint);
+    players[house].AddPoint(getPoint + field.ReleaseReachBar());
   }
 
-  void SetRonPoint(House house, House payHouse, const Point &point, const Field &field) {
+  void SetRonPoint(House house, House payHouse, const Point &point, Field &field) {
     const bool isBreak = field.GetBreakHouse() == payHouse || field.GetBreakHouse() == house;
     const int getPoint = players[house].IsParent() ?  point.GetParentRonPoint(isBreak) : point.GetChildRonPoint(isBreak);
     for (int i = 0; i < 3; ++i) {
       players[static_cast<House>(i)].AddPoint(0);
     }
-    players[house].AddPoint(getPoint);
+    players[house].AddPoint(getPoint + field.ReleaseReachBar());
     players[payHouse].AddPoint(-getPoint);
   }
 
-  void SetFlowPoint(const Field &field) {
+  bool IsParentTenpai(const Field &field) {
+    for (auto &player : players) {
+      if (player.IsParent() && player.IsTypeTenpai(field)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  boost::optional<House> SetFlowPoint(Field &field, boost::optional<Point> &p) {
     for (int i = 0; i < 3; ++i) {
       if (players[i].IsFever()) {
-        players[i].AddPoint(6000);
+        players[i].AddPoint(6000 + field.ReleaseReachBar());
         players[GetUpHouse(static_cast<House>(i))].AddPoint(-3000);
         players[GetDownHouse(static_cast<House>(i))].AddPoint(-3000);
-        players[i].SetFlow(false);
-        players[GetUpHouse(static_cast<House>(i))].SetFlow(true);
-        players[GetDownHouse(static_cast<House>(i))].SetFlow(true);
-        return;
+        players[i].SetFlow(false, field);
+        players[GetUpHouse(static_cast<House>(i))].SetFlow(true, field);
+        players[GetDownHouse(static_cast<House>(i))].SetFlow(true, field);
+        return boost::none;
       }
     }
     for (int i = 0; i < 3; ++i) {
       if (const auto point = players[i].GetLimitHandSink(field)) {
+        p = *point;
         SetTumoPoint(static_cast<House>(i), *point, field);
-        players[i].SetFlow(true);
-        players[GetUpHouse(static_cast<House>(i))].SetFlow(true);
-        players[GetDownHouse(static_cast<House>(i))].SetFlow(true);
-        return;
+        players[i].SetFlow(true, field);
+        players[GetUpHouse(static_cast<House>(i))].SetFlow(true, field);
+        players[GetDownHouse(static_cast<House>(i))].SetFlow(true, field);
+        return static_cast<House>(i);
       }
     }
-    for (auto &player : players) {
-      player.AddPoint(0);
-      player.SetFlow(false);
+    const int tenpaiCount = boost::count_if(players, [&field](Player &p) {
+      return p.IsTypeTenpai(field);
+    });
+    if (tenpaiCount == 1 || tenpaiCount == 2) {
+      for (auto &player : players) {
+        if (player.IsTypeTenpai(field)) {
+          player.AddPoint(tenpaiCount ? 6000 : 3000);
+        } else {
+          player.AddPoint(tenpaiCount ? -3000 : -6000);
+        }
+        player.SetFlow(false, field);
+      }
+    } else {
+      for (auto &player : players) {
+        player.AddPoint(0);
+        player.SetFlow(false, field);
+      }
     }
+    return boost::none;
   }
 
   void SetFuritenPai(Pai pai) {

@@ -16,8 +16,19 @@ class Field {
  public:
   void FirstGameInit(House parent) {
     setCount = 0;
+    bar = 0;
     firstParentHouse = parent;
     Init();
+  }
+
+  void AddReachBar() {
+    bar += 1000;
+  }
+
+  int ReleaseReachBar() {
+    int temp = bar;
+    bar = 0;
+    return temp;
   }
 
   void NextGameInit() {
@@ -118,6 +129,7 @@ class Field {
 
   int setCount;
   int doraCount;
+  int bar;
   House firstParentHouse;
   House breakHouse;
   TumoMountain tumoMountain;

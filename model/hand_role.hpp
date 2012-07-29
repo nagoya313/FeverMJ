@@ -6,7 +6,7 @@
 #include "role.hpp"
 #include "wait_type.hpp"
 #include "wind.hpp"
-#include "../utility/algtorithm.hpp"
+#include "../utility/algorithm.hpp"
 
 namespace FeverMJ { namespace Model {
 class HandRole {
@@ -89,21 +89,24 @@ class HandRole {
 
   void GoalPaiAddTriple(bool isTumoGoal, WaitType waitType, Pai goalPai) {
     if (waitType == WaitType::DoubleHead) {
+      tripleBits |= (1 << goalPai);
+      int hu;
       if (isTumoGoal) {
-        tripleBits |= (1 << goalPai);
+        hu = 4;
+        ++darkTripleCount;
       } else {
-        if (IsTyuntyanPai(goalPai)) {
-          isTyanta = false;
-          huCount += 2;
-        } else {
-          huCount += 4;
-        }
+        hu = 2;
+      }
+      if (IsTyuntyanPai(goalPai)) {
+        isTyanta = false;
+        huCount += hu;
+      } else {
+        huCount += hu * 2;
       }
     } 
   }
 
   void CheckTriple(bool isTumoGoal, WaitType waitType, Pai goalPai) {
-    GoalPaiAddTriple(isTumoGoal, waitType, goalPai);
     for (int i = 0; i < paiKindMax; ++i) {
       if (tripleBits & (1 << i)) {
         if (IsTyuntyanPai(i)) {
@@ -115,6 +118,7 @@ class HandRole {
         ++darkTripleCount;
       }
     }
+    GoalPaiAddTriple(isTumoGoal, waitType, goalPai);
   }
 
   std::vector<Pai> GoalPaiAddStraight(WaitType waitType, Pai waitHint, Pai goalPai, const std::vector<Pai> &straightList) {

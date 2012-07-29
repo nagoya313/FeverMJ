@@ -119,7 +119,7 @@ class Game : boost::noncopyable {
   Players playersView;
   Reach reachView;
   Squeal squealView;
-  View::ToggleButton notSquealButton{550, 440, "–Â‚©‚È‚¢"};
+  View::ToggleButton notSquealButton{600, 480, "–Â‚©‚È‚¢"};
 };
 }}
 
