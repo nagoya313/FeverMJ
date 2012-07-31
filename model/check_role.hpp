@@ -110,7 +110,7 @@ void CheckNotPeaceAndTanyaoRole(const RoleTemp &temp, RoleResult &result) {
 
 inline
 void CheckTyanta(const RoleTemp &temp, RoleResult &result) {
-  if (temp.IsTyanta() && result.HasRole(Role::OldHead) && !result.HasRole(Role::PureOldHead)) {
+  if (temp.IsTyanta() && !result.HasRole(Role::OldHead) && !result.HasRole(Role::PureOldHead)) {
     if (!(temp.GetPaiKindBits() & ~RoleBits::NotWord)) {
       result.AddRole(Role::PureTyanta, temp.IsMenzen() ? 3 : 2);
     } else {

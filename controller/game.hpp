@@ -5,24 +5,27 @@
 #include <DxLib.h>
 #include <boost/noncopyable.hpp>
 #include "input.hpp"
+#include "sequence.hpp"
 #include "../model/field.hpp"
 #include "../model/players.hpp"
 #include "../utility/pai_image.hpp"
 #include "../view/game.hpp"
 
 namespace FeverMJ { namespace Controller {
-class Game : boost::noncopyable {
+class Game : public Sequence {
  public:
   Game() {
     // TODO:‚Ç‚±‚ª—§‰Æ‚©‚ÌƒŒƒXƒ|ƒ“ƒX‚ð‘Ò‚Â
     field.FirstGameInit(static_cast<Model::House>(GetRand(2)));
+    gameView.SetStart();
     GameStart();
   }
 
-  void Update() {
+  std::unique_ptr<Sequence> Update() {
     input.Update();
     gameView.Draw(input, field, players, paiImage);
     sequence();
+    return nullptr;
   }
 
  private:
@@ -252,7 +255,7 @@ class Game : boost::noncopyable {
       }
     }
     if (!field.IsPaiEmpty()) {
-      if (field.GetDoraCount() <= 5 && players[Model::House::Self].IsDarkOrAddKanEnable() && !gameView.NotSquealButtonIsToggle()) {
+      if (field.GetDoraCount() <= 5 && players[Model::House::Self].IsDarkOrAddKanEnable()) {
         gameView.SetMenuMode([this, isAddKan] {
           SelectKan(isAddKan);
         }, View::MenuMode::Kan);

@@ -49,7 +49,7 @@ class Button {
   int length;
   std::string text;
   std::function<void ()> action = [] {};
-  bool hide = true;
+  bool hide = false;
 };
 
 class ToggleButton {

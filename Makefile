@@ -9,9 +9,11 @@ LFLAGS = -L"C:/Users\nagoya313/Documents/DxLib_GCC/ÉvÉçÉWÉFÉNÉgÇ…í«â¡Ç∑Ç◊Ç´ÉtÉ@É
 LFLAGS += -lDxLib -lDxUseCLib -lDxDrawFunc -ljpeg -lpng -lzlib -ltheora_static
 LFLAGS += -lvorbis_static -lvorbisfile_static -logg_static -lbulletdynamics -lbulletcollision -lbulletmath
 LFLAGS += -mwindows -static-libgcc -static-libstdc++
-OBJS = main.o #open_reach_test.o #main.o
+OBJS = main.o sequence.o 
+#OBJS = open_reach_test.o
 TARGET = FeverMJ.exe
 #$(STRIP) --strip-all $(TARGET)
+VPATH = controller
 
 all: $(TARGET)
 
@@ -23,7 +25,8 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $(CXXFLAGS) -c $<
 
 main.o: model/*.hpp view/*.hpp controller/*.hpp
-open_reach_test.o: model/*.hpp view/*.hpp controller/*.hpp
+sequence.o: model/*.hpp view/*.hpp controller/*.hpp
+#open_reach_test.o: model/*.hpp view/*.hpp controller/*.hpp
 
 clean:
 	rm -f $(OBJS) $(TARGET)

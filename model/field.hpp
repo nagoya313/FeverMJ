@@ -58,6 +58,14 @@ class Field {
     return firstParentHouse;
   }
 
+  House GetParentHouse() const {
+    House house = GetFirstParentHouse();
+    for (int i = 0; i < GetSetCount(); ++i) {
+      house = GetDownHouse(house);
+    }
+    return house;
+  }
+
   House GetBreakHouse() const {
     return breakHouse;
   }

@@ -36,6 +36,7 @@ class Squeal : boost::noncopyable {
     };
     for (std::uint32_t i = 0; i < MenuMode::ModeMax; ++i) {
       buttons.emplace_back(poses[i], i < 9 ? 0 : 32, texts[i]);
+      buttons[buttons.size() - 1].SetHide(true);
     }
   }
 

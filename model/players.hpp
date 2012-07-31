@@ -38,7 +38,8 @@ class Players {
                                        //{Pai::P2, Pai::P2, Pai::P2, Pai::P7, Pai::P7, Pai::P7, Pai::P8, Pai::S5, Pai::S6, Pai::S7, Pai::Center, Pai::Center, Pai::Center},
                                        //{Pai::M1, Pai::M1, Pai::M1, Pai::M9, Pai::M9, Pai::M9, Pai::P1, Pai::P1, Pai::P1, Pai::P5, Pai::West, Pai::West, Pai::West},
                                        //{Pai::P1, Pai::P2, Pai::P3, Pai::P4, Pai::P7, Pai::P7, Pai::P7, Pai::S2, Pai::S3, Pai::S4, Pai::S7, Pai::S7, Pai::S7},
-                                       field.GetFirstPais(),
+                                       {Pai::P1, Pai::P1, Pai::P7, Pai::P7, Pai::P8, Pai::P8, Pai::P9, Pai::S1, Pai::S1, Pai::S1, Pai::North, Pai::North, Pai::North},
+                                       //field.GetFirstPais(),
                                        GetStartWind(field, Wind::South));
     players[House::Down].GameStartInit(field.GetFirstPais(), GetStartWind(field, Wind::West));
   }
@@ -85,34 +86,22 @@ class Players {
   }
 
   bool IsParentTenpai(const Field &field) {
-    for (auto &player : players) {
-      if (player.IsParent() && player.IsTypeTenpai(field)) {
-        return true;
-      }
-    }
-    return false;
+    return players[field.GetParentHouse()].IsTypeTenpai(field);
   }
 
   boost::optional<House> SetFlowPoint(Field &field, boost::optional<Point> &p) {
-    for (int i = 0; i < 3; ++i) {
-      if (players[i].IsFever()) {
-        players[i].AddPoint(6000 + field.ReleaseReachBar());
-        players[GetUpHouse(static_cast<House>(i))].AddPoint(-3000);
-        players[GetDownHouse(static_cast<House>(i))].AddPoint(-3000);
-        players[i].SetFlow(false, field);
-        players[GetUpHouse(static_cast<House>(i))].SetFlow(true, field);
-        players[GetDownHouse(static_cast<House>(i))].SetFlow(true, field);
-        return boost::none;
-      }
+    if (SetFlowFeverPoint(field, p)) {
+      return boost::none;
     }
+    const House parent = field.GetParentHouse();
     for (int i = 0; i < 3; ++i) {
-      if (const auto point = players[i].GetLimitHandSink(field)) {
+      if (const auto point = players[parent].GetLimitHandSink(field)) {
         p = *point;
-        SetTumoPoint(static_cast<House>(i), *point, field);
-        players[i].SetFlow(true, field);
-        players[GetUpHouse(static_cast<House>(i))].SetFlow(true, field);
-        players[GetDownHouse(static_cast<House>(i))].SetFlow(true, field);
-        return static_cast<House>(i);
+        SetTumoPoint(parent, *point, field);
+        players[parent].SetFlow(true, field);
+        players[GetUpHouse(parent)].SetFlow(true, field);
+        players[GetDownHouse(parent)].SetFlow(true, field);
+        return parent;
       }
     }
     const int tenpaiCount = boost::count_if(players, [&field](Player &p) {
@@ -182,6 +171,21 @@ class Players {
            firstWind : field.GetFirstParentHouse() == House::Self ?
                        GetPrevWind(firstWind) :
                        GetNextWind(firstWind);
+  }
+
+  bool SetFlowFeverPoint(Field &field, boost::optional<Point> &p) {
+    for (int i = 0; i < 3; ++i) {
+      if (players[i].IsFever()) {
+        players[i].AddPoint(6000 + field.ReleaseReachBar());
+        players[GetUpHouse(static_cast<House>(i))].AddPoint(-3000);
+        players[GetDownHouse(static_cast<House>(i))].AddPoint(-3000);
+        players[i].SetFlow(false, field);
+        players[GetUpHouse(static_cast<House>(i))].SetFlow(true, field);
+        players[GetDownHouse(static_cast<House>(i))].SetFlow(true, field);
+        return true;
+      }
+    }
+    return false;
   }
 
   std::array<Player, 3> players;
