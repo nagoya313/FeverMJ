@@ -8,8 +8,7 @@
 namespace FeverMJ { namespace Model {
 inline
 boost::optional<TiPair> GetTiCandidateUpBothSideWait(const PaiKindArray &kind, Pai pai) {
-  assert(pai != Pai::Invalid);
-  assert(pai >= Pai::P1 && pai <= Pai::S9);
+  assert(IsStraightEnablePai(pai));
   if (GetNumber(pai) < 7 && kind[pai + 1] && kind[pai + 2]) {
     PaiKindArray temp = kind;
     temp[pai] = 0;
@@ -27,8 +26,7 @@ boost::optional<TiPair> GetTiCandidateUpBothSideWait(const PaiKindArray &kind, P
 
 inline
 boost::optional<TiPair> GetTiCandidateDownBothSideWait(const PaiKindArray &kind, Pai pai) {
-  assert(pai != Pai::Invalid);
-  assert(pai >= Pai::P1 && pai <= Pai::S9);
+  assert(IsStraightEnablePai(pai));
   if (GetNumber(pai) > 1 && kind[pai - 1] && kind[pai - 2]) {
     PaiKindArray temp = kind;
     temp[pai] = 0;
@@ -46,8 +44,7 @@ boost::optional<TiPair> GetTiCandidateDownBothSideWait(const PaiKindArray &kind,
 
 inline
 boost::optional<TiPair> GetTiCandidateBetweenWait(const PaiKindArray &kind, Pai pai) {
-  assert(pai != Pai::Invalid);
-  assert(pai >= Pai::P1 && pai <= Pai::S9);
+  assert(IsStraightEnablePai(pai));
   const int number = GetNumber(pai);
   if (number != 0 && number != 8 && kind[pai - 1] && kind[pai + 1]) {
     PaiKindArray temp = kind;
@@ -63,9 +60,8 @@ boost::optional<TiPair> GetTiCandidateBetweenWait(const PaiKindArray &kind, Pai 
 
 inline
 std::vector<TiPair> GetTiCandidate(const PaiKindArray &kind, Pai pai) {
-  assert(pai != Pai::Invalid);
   std::vector<TiPair> tiCandidate;
-  if (pai >= Pai::P1 && pai <= Pai::S9) {
+  if (IsStraightEnablePai(pai)) {
     if (const auto pair = GetTiCandidateUpBothSideWait(kind, pai)) {
       tiCandidate.push_back(*pair);
     }

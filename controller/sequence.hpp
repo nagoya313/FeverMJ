@@ -2,6 +2,7 @@
 #define FEVERMJ_CONTROLLER_SEQUENCE_HPP_
 #include <memory>
 #include <boost/noncopyable.hpp>
+#include "../utility/network.hpp"
 
 namespace FeverMJ { namespace Controller {
 class Sequence : boost::noncopyable {
@@ -10,10 +11,12 @@ class Sequence : boost::noncopyable {
   virtual std::unique_ptr<Sequence> Update() = 0;
 };
 
-std::unique_ptr<Sequence> GotoGame();
-std::unique_ptr<Sequence> GotoTitle();
-std::unique_ptr<Sequence> GotoServer();
-std::unique_ptr<Sequence> GotoClient();
+using SequencePtr = std::unique_ptr<Sequence>;
+
+SequencePtr GotoGame(int firstParent, int seed, Utility::NetHandleArray &&handles);
+SequencePtr GotoTitle();
+SequencePtr GotoServer();
+SequencePtr GotoClient();
 }}
 
 #endif

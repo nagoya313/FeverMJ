@@ -7,11 +7,15 @@
 #include <boost/range/algorithm/count.hpp>
 #include <boost/range/algorithm/count_if.hpp>
 #include <boost/range/algorithm/equal_range.hpp>
+#include <boost/range/algorithm/fill.hpp>
 #include <boost/range/algorithm/find.hpp>
+#include <boost/range/algorithm/find_if.hpp>
 #include <boost/range/algorithm/lower_bound.hpp>
 #include <boost/range/algorithm/max_element.hpp>
+#include <boost/range/algorithm/random_shuffle.hpp>
 #include <boost/range/algorithm/sort.hpp>
 #include <boost/range/algorithm/transform.hpp>
+#include <boost/range/algorithm/upper_bound.hpp>
 #include <boost/range/numeric.hpp>
 
 namespace boost {

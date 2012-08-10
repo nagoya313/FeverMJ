@@ -18,9 +18,18 @@ class Squeal {
     squealImageList.clear();
   }
 
+  void SetHouse(House house) {
+    selfHouse = house;
+  }
+
   void AddNorth() {
     ++kind[Pai::North];
     squealImageList.push_back(Pai::North);
+  }
+
+  void RemoveNorth() {
+    --kind[Pai::North];
+    squealImageList.erase(std::prev(boost::upper_bound(squealImageList, Pai::North)));
   }
 
   int GetNorthCount() const {
@@ -28,16 +37,15 @@ class Squeal {
   }
 
   void AddPon(House house, Pai pai) {
-    assert(pai != Pai::Invalid);
     kind[pai] += 3;
     ponBits |= 1 << pai;
-    if (house == House::Down) {
+    if (house == GetDownHouse(selfHouse)) {
       squealImageList.push_back(pai + squealOffset);
     } else {
       squealImageList.push_back(pai);
     }
     squealImageList.push_back(pai);
-    if (house == House::Up) {
+    if (house == GetUpHouse(selfHouse)) {
       squealImageList.push_back(pai + squealOffset);
     } else {
       squealImageList.push_back(pai);
@@ -45,9 +53,6 @@ class Squeal {
   }
 
   void AddTi(Pai squealPai, const TiPair &pais) {
-    assert(squealPai != Pai::Invalid);
-    assert(pais.first != Pai::Invalid);
-    assert(pais.second != Pai::Invalid);
     assert(pais.first < pais.second);
     ++kind[squealPai];
     ++kind[pais.first];
@@ -59,13 +64,12 @@ class Squeal {
   }
 
   void AddDarkKan(Pai pai) {
-    assert(pai != Pai::Invalid);
     kind[pai] += 4;
     darkKanBits |= 1 << pai;
-    squealImageList.push_back(Pai::Invalid);
+    squealImageList.push_back(paiBack);
     squealImageList.push_back(pai);
     squealImageList.push_back(pai);
-    squealImageList.push_back(Pai::Invalid);
+    squealImageList.push_back(paiBack);
   }
 
   void AddAddKan(Pai pai) {
@@ -80,14 +84,14 @@ class Squeal {
   void AddLightKan(House house, Pai pai) {
     kind[pai] += 4;
     lightKanBits |= 1 << pai;
-    if (house == House::Down) {
+    if (house == GetDownHouse(selfHouse)) {
       squealImageList.push_back(pai + squealOffset);
     } else {
       squealImageList.push_back(pai);
     }
     squealImageList.push_back(pai);
     squealImageList.push_back(pai);
-    if (house == House::Up) {
+    if (house == GetUpHouse(selfHouse)) {
       squealImageList.push_back(pai + squealOffset);
     } else {
       squealImageList.push_back(pai);
@@ -95,7 +99,6 @@ class Squeal {
   }
 
   void AddRon(Pai pai) {
-    assert(pai != Pai::Invalid);
     ponBits |= 1 << pai;
   }
 
@@ -138,6 +141,7 @@ class Squeal {
   std::uint32_t darkKanBits;
   std::uint32_t lightKanBits;
   std::vector<int> squealImageList;
+  House selfHouse;
 };
 }}
 

@@ -2,6 +2,7 @@
 #define FEVERMJ_MODEL_POINT_HPP_
 #include <cmath>
 #include <cstdint>
+#include "field.hpp"
 #include "role_result.hpp"
 
 namespace FeverMJ { namespace Model {
@@ -25,20 +26,16 @@ class Point {
     return roleResult.GetRoleBits();
   }
 
-  int GetChildRonPoint(bool isBreakHouse) const {
-    return GetRoundedUp1000(GetRoundedUp100(GetBasicPoint() * 4) * (isBreakHouse ? 3 : 1));
+  int GetTumoPoint(House goal, House pay, const Field &field) const {
+    const bool isBreak = field.GetBreakHouse() == pay || field.GetBreakHouse() == goal;
+    return field.GetParentHouse() == goal || field.GetParentHouse() == pay ?
+           GetChildTumoParentPoint(isBreak) :
+           GetChildTumoChildPoint(isBreak);
   }
 
-  int GetParentRonPoint(bool isBreakHouse) const {
-    return GetRoundedUp1000(GetRoundedUp100(GetBasicPoint() * 6) * (isBreakHouse ? 3 : 1));
-  }
-
-  int GetChildTumoChildPoint(bool isBreakHouse) const {
-    return GetRoundedUp1000(GetRoundedUp100(GetBasicPoint()) * (isBreakHouse ? 3 : 1));
-  }
-
-  int GetChildTumoParentPoint(bool isBreakHouse) const {
-    return GetRoundedUp1000(GetRoundedUp100(GetBasicPoint() * 2) * (isBreakHouse ? 3 : 1));
+  int GetRonPoint(House goal, House pay, const Field &field) const {
+    const bool isBreak = field.GetBreakHouse() == pay || field.GetBreakHouse() == goal;
+    return field.GetParentHouse() == goal ? GetParentRonPoint(isBreak) : GetChildRonPoint(isBreak);
   }
 
   int GetBasicPoint() const {
@@ -64,11 +61,29 @@ class Point {
   }
 
  private:
-  int GetRoundedUp100(int ten) const {
+  int GetChildRonPoint(bool isBreakHouse) const {
+    return GetRoundedUp1000(GetRoundedUp100(GetBasicPoint() * 4) * (isBreakHouse ? 3 : 1));
+  }
+
+  int GetParentRonPoint(bool isBreakHouse) const {
+    return GetRoundedUp1000(GetRoundedUp100(GetBasicPoint() * 6) * (isBreakHouse ? 3 : 1));
+  }
+
+  int GetChildTumoChildPoint(bool isBreakHouse) const {
+    return GetRoundedUp1000(GetRoundedUp100(GetBasicPoint()) * (isBreakHouse ? 3 : 1));
+  }
+
+  int GetChildTumoParentPoint(bool isBreakHouse) const {
+    return GetRoundedUp1000(GetRoundedUp100(GetBasicPoint() * 2) * (isBreakHouse ? 3 : 1));
+  }
+
+  static
+  int GetRoundedUp100(int ten) {
     return !(ten % 100) ? ten : (ten / 100 + 1) * 100;
   }
 
-  int GetRoundedUp1000(int h) const {
+  static
+  int GetRoundedUp1000(int h) {
     return h % 1000 > 500 ? (h / 1000 + 1) * 1000 : (h / 1000) * 1000;
   }
 

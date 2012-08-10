@@ -309,7 +309,7 @@ inline
 WaitPair GetTenpaiPatern(Pai pai, int size, PaiKindArray &kind) {
   --kind[pai];
   const auto pair = GetWaitPai(kind, {}, size == 13);
-  FEVERMJ_LOG("‘Ò‚¿ %x Œ` %d Žè”v %d\n", pair.waitPaiBits, pair.tenpaiPatern.size(), size);
+  //FEVERMJ_LOG("‘Ò‚¿ %x Œ` %d Žè”v %d\n", pair.waitPaiBits, pair.tenpaiPatern.size(), size);
   ++kind[pai];
   return pair;
 }

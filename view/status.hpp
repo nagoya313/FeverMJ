@@ -25,11 +25,12 @@ class Status : boost::noncopyable {
     if (field.IsOLas()) {
       DrawString(328, 56, "オーラス", GetColor(255, 255, 255));
     }
+    // 供託棒も
     DrawFormatString(328, 88, GetColor(255, 255, 255), "東%d局", field.GetSetCount());
     DrawFormatString(328, 120, GetColor(255, 255, 255), "残り山:%d", field.GetTumoMountainSize());
-    DrawFormatString(128, 120, GetColor(255, 255, 255), "%d", players[Model::House::Up].GetPoint());
+    DrawFormatString(168, 120, GetColor(255, 255, 255), "%d", players[Model::House::Up].GetPoint());
     DrawFormatString(376, 152, GetColor(255, 255, 255), "%d", players[Model::House::Self].GetPoint());
-    DrawFormatString(580, 120, GetColor(255, 255, 255), "%d", players[Model::House::Down].GetPoint());
+    DrawFormatString(540, 120, GetColor(255, 255, 255), "%d", players[Model::House::Down].GetPoint());
   }
 
   bool isResult = false;

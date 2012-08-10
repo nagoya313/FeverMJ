@@ -35,14 +35,6 @@ class PlayerState {
     state |= DoubleFever;
   }
 
-  void SetOpenRon() {
-    state |= OpenRon;
-  }
-
-  void ResetOpenRon() {
-    state &= ~OpenRon;
-  }
-
   void SetFirst() {
     state |= ReachFirstTumo;
   }
@@ -53,14 +45,6 @@ class PlayerState {
   
   void DeleteFirst() {
     state &= ~(FirstTumo | RinsyanKaiho | ReachFirstTumo);
-  }
-  
-  void SetFuriten() {
-    state |= Furiten;
-  }
-  
-  void ResetFuriten() {
-    state &= ~Furiten;
   }
 
   void SetRinsyanKaiho() {
@@ -95,10 +79,6 @@ class PlayerState {
     return state & DoubleFever;
   }
   
-  bool IsTyankan() const {
-    return state & Tyankan;
-  }
-  
   bool IsRinsyanKaiho() const {
     return state & RinsyanKaiho;
   }
@@ -110,14 +90,6 @@ class PlayerState {
   bool IsReachFirstTumo() const {
     return state & ReachFirstTumo;
   }
-
-  bool IsFuriten() const {
-    return state & Furiten;
-  }
-
-  bool IsOpenRon() const {
-    return state & OpenRon;
-  }
  
  private:
   enum : std::uint32_t {
@@ -126,13 +98,10 @@ class PlayerState {
     Fever = 1 << 2,
     DoubleFever = 1 << 3,
     RinsyanKaiho = 1 << 4,
-    Tyankan = 1 << 5,
-    Furiten = 1 << 6,
     FirstTumo = 1 << 7,
     Menzen = 1 << 8,
     Open = 1 << 9,
     ReachFirstTumo = 1 << 10,
-    OpenRon = 1 << 11
   };
   
   std::uint32_t state;

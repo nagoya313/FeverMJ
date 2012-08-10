@@ -1,5 +1,6 @@
 #ifndef FEVERMJ_CONTROLLER_TITLE_HPP_
 #define FEVERMJ_CONTROLLER_TITLE_HPP_
+#include <ctime>
 #include <boost/noncopyable.hpp>
 #include "input.hpp"
 #include "sequence.hpp"
@@ -10,7 +11,7 @@ class Title : public Sequence {
  public:
   Title() {
     titleView.Init([this] {
-      next = GotoGame();
+      next = GotoGame(-1, time(nullptr), {});
     }, [this] {
       next = GotoServer();
     }, [this] {

@@ -118,7 +118,7 @@ class Result : boost::noncopyable {
 
   void DrawDora(const Model::Field &field, const Model::Player &player, const Utility::PaiImage &paiImage) {
     DrawString(280, 120, "ƒhƒ‰", GetColor(255, 255, 255));
-    const auto doraList = field.GetDoraList(player.GetPlayerState().IsReachTenpai());
+    const auto doraList = field.GetDoraList(player.IsReachTenpai());
     const int size = doraList.size() - 3;
     for (int i = 0; i < size; ++i) {
       DrawGraph(372 + 33 * i, 120, paiImage.GetUpHandle(doraList[i + 3]), TRUE);

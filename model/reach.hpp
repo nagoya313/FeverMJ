@@ -1,6 +1,7 @@
 #ifndef FEVERMJ_MODEL_REACH_HPP_
 #define FEVERMJ_MODEL_REACH_HPP_
 #include <vector>
+#include "river.hpp"
 #include "squeal.hpp"
 #include "tenpai_patern.hpp"
 #include "../utility/algorithm.hpp"
@@ -11,6 +12,14 @@ struct ReachIndex {
   std::uint32_t reach;
   std::uint32_t fever;
   std::uint32_t doubleFever;
+};
+
+enum class ReachState {
+  Normal,
+  ReachStart,
+  OpenStart,
+  FeverStart,
+  DoubleFeverStart
 };
 
 using ReachPatern = std::vector<std::vector<TenpaiPatern>>;
@@ -41,17 +50,17 @@ void SetDoubleFeverEnableIndex(int i, ReachIndex &index) {
 }
 
 inline
-ReachIndex GetReachEnableIndex(const std::vector<int> &riverList, const Hand &hand, const Squeal &squeal) {
+ReachIndex GetReachEnableIndex(const River &river, const Hand &hand, const Squeal &squeal) {
   ReachIndex index = {};
   int i = 0;
   for (const auto &patern : hand.GetReachPatern()) {
     if (!patern.tenpaiPatern.empty()) {
       const int ii = i == hand.GetHandSize() ? 14 : i;
       SetReachEnableIndex(ii, index);
-      const auto pai = i == hand.GetHandSize() ? hand.GetTumo() : hand.GetHand(i);
+      const auto pai = i == hand.GetHandSize() ? *hand.GetTumo() : hand.GetHand(i);
       const auto wait = patern.waitPaiBits;
-      if (!(wait & (1 << pai)) && boost::none_of(riverList, [wait](int x) {return wait & (1 << x);})) {
-        const std::uint32_t f = CheckFever(patern.tenpaiPatern, squeal);
+      if (!(wait & (1 << pai)) && river.IsFuriten(wait, hand)) {
+        const auto f = CheckFever(patern.tenpaiPatern, squeal);
         if (f == 0x1 || f == 0x2) {
           SetFeverEnableIndex(ii, index);
         } else if (f == 0x3) {

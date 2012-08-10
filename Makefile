@@ -1,7 +1,10 @@
 CC = g++
 STRIP = strip
-CFLAGS = -DDX_GCC_COMPILE -DDX_LIB_NOT_DEFAULTPATH -DDX_NON_INLINE_ASM -D_GLIBCXX_DEBUG
-CFLAGS += -Wall -Werror -O3 -DNDEBUGLOG #-DNDEBUG 
+CFLAGS = -DDX_GCC_COMPILE -DDX_LIB_NOT_DEFAULTPATH -DDX_NON_INLINE_ASM
+CFLAGS += -DBOOST_SPIRIT_USE_PHOENIX_V3=1
+CFLAGS += -DNDEBUGLOG #-DNDEBUG
+#CFLAGS += -D_GLIBCXX_DEBUG
+CFLAGS += -Wall -Werror -O3 
 CFLAGS += -ID:/lib/boost_1_50_0
 CFLAGS += -I"C:/Users\nagoya313/Documents/DxLib_GCC/プロジェクトに追加すべきファイル_GCC(MinGW)用"
 CXXFLAGS = -std=c++11
@@ -12,7 +15,6 @@ LFLAGS += -mwindows -static-libgcc -static-libstdc++
 OBJS = main.o sequence.o 
 #OBJS = open_reach_test.o
 TARGET = FeverMJ.exe
-#$(STRIP) --strip-all $(TARGET)
 VPATH = controller
 
 all: $(TARGET)
@@ -24,9 +26,9 @@ $(TARGET): $(OBJS)
 .cc.o:
 	$(CC) $(CFLAGS) $(CXXFLAGS) -c $<
 
-main.o: model/*.hpp view/*.hpp controller/*.hpp
-sequence.o: model/*.hpp view/*.hpp controller/*.hpp
-#open_reach_test.o: model/*.hpp view/*.hpp controller/*.hpp
+main.o: model/*.hpp view/*.hpp controller/*.hpp utility/*.hpp
+sequence.o: model/*.hpp view/*.hpp controller/*.hpp utility/*.hpp
+#open_reach_test.o: model/*.hpp view/*.hpp controller/*.hpp utility/*.hpp
 
 clean:
 	rm -f $(OBJS) $(TARGET)

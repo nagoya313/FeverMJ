@@ -1,5 +1,6 @@
 #ifndef FEVERMJ_MODEL_HOUSE_HPP_
 #define FEVERMJ_MODEL_HOUSE_HPP_
+#include <cassert>
 
 namespace FeverMJ { namespace Model {
 namespace House_ {  
@@ -20,6 +21,21 @@ House GetUpHouse(House house) {
 inline
 House GetDownHouse(House house) {
   return house == House::Up ? House::Self : house == House::Self ? House::Down : House::Up;
+}
+
+inline
+int GetHouseDistance(House begin, House house) {
+  int i;
+  for (i = 0; begin != house; ++i) {
+    house = GetUpHouse(house);
+  }
+  return i;
+}
+
+inline
+House GetOtherHouse(House house) {
+  assert(house != House::Self);
+  return house == House::Up ? House::Down : House::Up;
 }
 }}
 

@@ -12,8 +12,8 @@ class DoraMountain : boost::noncopyable {
     for (int i = 0; i < 5; ++i) {
       DrawGraph(338 + 33 * (i % 6), 200, paiImage.GetBackHandle(0), TRUE);
       const auto displayDora = field.GetDisplayDora(i);
-      DrawGraph(338 + 33 * (i % 6), 184, displayDora != Model::Pai::Invalid ?
-                                         paiImage.GetUpHandle(displayDora) :
+      DrawGraph(338 + 33 * (i % 6), 184, displayDora ?
+                                         paiImage.GetUpHandle(*displayDora) :
                                          paiImage.GetBackHandle(0), TRUE);
     }
   }

@@ -11,6 +11,7 @@
 #include "pai.hpp"
 #include "player_state.hpp"
 #include "reach.hpp"
+#include "river.hpp"
 #include "squeal.hpp"
 #include "wind.hpp"
 #include "../utility/log.hpp"
@@ -18,8 +19,9 @@
 namespace FeverMJ { namespace Model {
 class Player {
  public:
-  void GameStartInit(HandVector &&firstPai, Wind wind) {
+  void GameStartInit(HandVector &&firstPai, Wind wind, House house) {
     beforePoint = point = 25000;
+    squeal.SetHouse(house);
     Init(std::move(firstPai), wind);
   }
 
@@ -34,18 +36,13 @@ class Player {
   void DeleteFirst() {
     playerState.DeleteFirst();
   }
-  
-  void SetFuritenPai(Pai pai) {
-    assert(pai != Pai::Invalid);
-    furitenList.push_back(pai);
-  }
 
-  boost::optional<Point> Ron(Pai pai, Field &field) {
-    CheckHuriten();
-    if (hand.IsWaitPai(pai) && !playerState.IsFuriten()) {
-      FEVERMJ_LOG("ÉçÉìÇ¡ÇΩÅH\n");
+  boost::optional<Point> Ron(std::uint32_t role, Pai pai, Field &field) {
+    FEVERMJ_LOG("ë“Çø %x ÉtÉäÉeÉì %d\n", hand.GetWait().waitPaiBits, river.IsFuriten(hand));
+    if (hand.IsWaitPai(pai) && !river.IsFuriten(hand)) {
+      FEVERMJ_LOG("ÉçÉìîªíË\n");
       goalPai = pai;
-      return IsRonGoal(pai, hand, squeal, field, playerState);
+      return IsRonGoal(role, pai, hand, squeal, field, playerState);
     }
     return boost::none;
   }
@@ -54,35 +51,49 @@ class Player {
     return Tumo(field, false);
   }
 
-  Pai TumoCut() {
+  Pai TumoCut(bool isReach) {
     const auto pai = hand.TumoCut();
+    if (isReach) {
+      SetReach();
+    }
     DeleteFirst();
-    riverList.push_back(pai);
     hand.CheckTenpai(squeal.GetPaiKindArray());
     return pai;
   }
 
-  Pai HandCut(int i) {
+  Pai HandCut(int i, bool isReach) {
     const Pai pai = hand.HandCut(i);
+    if (isReach) {
+      SetReach();
+    }
     DeleteFirst();
-    riverList.push_back(pai);
     hand.CheckTenpai(squeal.GetPaiKindArray());
     notSelectableBits = 0x0;
     return pai;
   }
 
-  boost::optional<Point> EraseNorth(Field &field) {
+  void EraseNorth() {
     hand.EraseNorth();
     squeal.AddNorth();
     DeleteFirst();
+  }
+
+  boost::optional<Point> EraseNorthTumo(Field &field) {
     hand.CheckTenpai(squeal.GetPaiKindArray());
     return Tumo(field, true);
   }
 
+  boost::optional<Point> RinsyanTumo(Field &field) {
+    hand.CheckTenpai(squeal.GetPaiKindArray());
+    playerState.SetRinsyanKaiho();
+    return Tumo(field, true);
+  }
+
+  void RemoveNorth() {
+    squeal.RemoveNorth();
+  }
+
   void Ti(Pai squealPai, const std::pair<Pai, Pai> &pais) {
-    assert(squealPai != Pai::Invalid);
-    assert(pais.first != Pai::Invalid);
-    assert(pais.second != Pai::Invalid);
     assert(pais.first < pais.second);
     hand.Ti(pais);
     squeal.AddTi(squealPai, pais);
@@ -100,7 +111,6 @@ class Player {
   }
 
   void Pon(House house, Pai pai) {
-    assert(pai != Pai::Invalid);
     hand.Pon(pai);
     squeal.AddPon(house, pai);
     playerState.Squeal();
@@ -109,7 +119,6 @@ class Player {
   }
 
   boost::optional<Point> DarkKan(Pai pai, Field &field) {
-    assert(pai != Pai::Invalid);
     hand.DarkKan(pai, playerState.IsOpen() || playerState.IsFever() || playerState.IsDoubleFever());
     squeal.AddDarkKan(pai);
     DeleteFirst();
@@ -118,17 +127,12 @@ class Player {
     return Tumo(field, true);
   }
 
-  boost::optional<Point> AddKan(Pai pai, Field &field) {
-    assert(pai != Pai::Invalid);
+  void AddKan(Pai pai) {
     hand.AddKan(pai);
     squeal.AddAddKan(pai);
-    hand.CheckTenpai(squeal.GetPaiKindArray());
-    playerState.SetRinsyanKaiho();
-    return Tumo(field, true);
   }
 
   boost::optional<Point> LightKan(House house, Pai pai, Field &field) {
-    assert(pai != Pai::Invalid);
     hand.LightKan(pai);
     squeal.AddLightKan(house, pai);
     DeleteFirst();
@@ -139,7 +143,6 @@ class Player {
   }
 
   std::vector<TiPair> GetTiCandidate(Pai pai) const {
-    assert(pai != Pai::Invalid);
     return hand.GetTiCandidate(pai);
   }
 
@@ -152,23 +155,19 @@ class Player {
   }
 
   int GetRiverSize() const {
-    return riverList.size();
+    return river.GetSize();
   }
 
   int GetSquealSize() const {
     return squeal.GetSquealSize();
   }
 
-  Pai GetTumo() const {
+  boost::optional<Pai> GetTumo() const {
     return hand.GetTumo();
   }
 
   Wind GetWind() const {
     return playerState.GetSelfWind();
-  }
-
-  PlayerState GetPlayerState() const {
-    return playerState;
   }
 
   Pai GetHandPai(int i) const {
@@ -179,13 +178,12 @@ class Player {
     return !(notSelectableBits & (1 << hand.GetHand(i)));
   }
 
-  void PopBackRiver() {
-    squealedList.push_back(static_cast<Pai>(*std::prev(riverList.end()) % squealOffset));
-    riverList.pop_back();
+  bool IsReachTenpai() const {
+    return playerState.IsReachTenpai();
   }
 
-  int GetRiverImageHandle(int i) const {
-    return riverList[i];
+  bool IsOpen() const {
+    return playerState.IsOpen();
   }
 
   int GetSquealImageHandle(int i) const {
@@ -193,12 +191,10 @@ class Player {
   }
 
   bool IsDarkKanEnablePai(Pai pai) const {
-    assert(pai != Pai::Invalid);
     return hand.GetPaiCount(pai) == 4;
   }
 
   bool IsAddKanEnablePai(Pai pai) const {
-    assert(pai != Pai::Invalid);
     return squeal.IsAddKanEnablePai(pai);
   }
 
@@ -211,17 +207,14 @@ class Player {
   }
 
   bool IsPonEnable(Pai pai) const {
-    assert(pai != Pai::Invalid);
     return hand.GetPaiCount(pai) >= 2;
   }
 
   bool IsLightKanEnable(Pai pai) const {
-    assert(pai != Pai::Invalid);
     return hand.GetPaiCount(pai) == 3;
   }
 
   int GetPaiCount(Pai pai) const {
-    assert(pai != Pai::Invalid);
     return hand.GetPaiCount(pai);
   }
 
@@ -242,28 +235,13 @@ class Player {
     return point - beforePoint;
   }
 
-  boost::optional<Point> GetLimitHandSink(const Field &field) const {
-    if (squealedList.empty()) {
-      int doraCount = 0;
-      const auto doraList = field.GetDoraList(false);
-      for (const int pai : riverList) {
-        if (IsTyuntyanPai(pai % squealOffset)) {
-          return boost::none;
-        }
-        doraCount += boost::count(doraList, static_cast<Pai>(pai));
-      }
-      doraCount += squeal.GetNorthCount();
-      return Point{RoleResult{doraCount}};
-    }
-    return boost::none;
-  }
-
   bool IsTenpai() const {
     return hand.IsTenpai();
   }
 
   bool IsTypeTenpai(const Field &field) {
     if (playerState.IsMenzen() && IsTenpai()) {
+      FEVERMJ_LOG("ñ ëOíÆîv\n");
       return true;
     } else if (IsTenpai()) {
       for (int i = 0; i < paiKindMax; ++i) {
@@ -271,12 +249,14 @@ class Player {
         if (hand.IsWaitPai(static_cast<Pai>(i))) {
           if (IsTumoGoal(hand, squeal, field, playerState)) {
             hand.TumoCut();
+            FEVERMJ_LOG("ñ¬Ç´íÆîv\n");
             return true;
           }
         }
         hand.TumoCut();
       }
     }
+    FEVERMJ_LOG("íÆîvé∏îs\n");
     return false;
   }
 
@@ -285,99 +265,78 @@ class Player {
   }
 
   ReachIndex GetReachEnableIndex() const {
-    return playerState.IsMenzen() ? Model::GetReachEnableIndex(riverList, hand, squeal) : ReachIndex{};
-  }
-
-  void SetReach() {
-    if (playerState.IsFirstTumo()) {
-      playerState.SetDoubleReach();
-    } else {
-      playerState.SetReach();
-    }
-    AddPoint(-1000);
+    return playerState.IsMenzen() ? Model::GetReachEnableIndex(river, hand, squeal) : ReachIndex{};
   }
 
   void SetOpenReach() {
-    SetReach();
     playerState.SetOpen();
+    hand.SetOpenReach();
   }
 
   void SetFeverReach() {
-    SetReach();
     playerState.SetFever();
+    hand.SetOpenReach();
   }
 
   void SetDoubleFeverReach() {
-    SetReach();
     playerState.SetDoubleFever();
+    hand.SetOpenReach();
   }
 
-  void SetReachRiver() {
-    *std::prev(riverList.end()) += squealOffset;
-    // Ç±Ç±Ç…èëÇ≠ÇÃÇÕâòÇ¢
-    playerState.SetFirst();
-    if (playerState.IsOpen() || playerState.IsFever() || playerState.IsDoubleFever()) {
-      hand.SetOpenReach();
-    }
+  void ReachCancel() {
+    AddPoint(1000);
   }
 
   Pai GetGoalPai() const {
     return goalPai;
   }
 
-  void SetOpenRon() {
-    playerState.SetOpenRon();
-  }
-
-  void ResetOpenRon() {
-    playerState.ResetOpenRon();
-  }
-
   void SetFlow(bool f, const Field &field) {
     if (f || !IsTypeTenpai(field)) {
       hand.SetFlow();
     } else {
+      FEVERMJ_LOG("íÆîvîªíË\n");
       hand.SetTenpai();
     }
+  }
+
+  boost::optional<Point> CheckLimitHandSink(const Field &field) const {
+    return river.CheckLimitHandSink(field, squeal);
+  }
+
+  void SetFuritenPai(Pai pai) {
+    river.SetFuritenPai(pai);
+  }
+
+  void PushBackRiver(Pai pai, bool isReach) {
+    if (isReach) {
+      river.ReachPush(pai);
+    } else {
+      river.Push(pai);
+    }
+  }
+
+  void PopBackRiver() {
+    river.Pop();
+  }
+
+  void SetRiver() {
+    river.Set();
+  }
+
+  int GetRiverImageHandle(int i) const {
+    return river[i];
   }
 
  private:
   void Init(HandVector &&firstPai, Wind wind) {
     hand.Init(std::move(firstPai));
     squeal.Init();
-    riverList.clear();
-    furitenList.clear();
-    squealedList.clear();
+    river.Init();
     playerState.Init(wind);
     notSelectableBits = 0x0;
     hand.CheckTenpai({});
     AddPoint(0);
-  }
-
-  void CheckHuriten() {
-    if (IsFever()) {
-      playerState.ResetFuriten();
-      return;
-    }
-    for (const int pai : riverList) {
-      if (hand.IsWaitPai(static_cast<Pai>(pai % squealOffset))) {
-        playerState.SetFuriten();
-        return;
-      }
-    }
-    for (const Pai pai : squealedList) {
-      if (hand.IsWaitPai(pai)) {
-        playerState.SetFuriten();
-        return;
-      }
-    }
-    for (const Pai pai : furitenList) {
-      if (hand.IsWaitPai(pai)) {
-        playerState.SetFuriten();
-        return;
-      }
-    }
-    playerState.ResetFuriten();
   }
 
   bool IsDarkKanEnable() const {
@@ -391,7 +350,7 @@ class Player {
         return true;
       }
     }
-    if (squeal.IsAddKanEnablePai(hand.GetTumo())) {
+    if (squeal.IsAddKanEnablePai(*hand.GetTumo())) {
       return true;
     }
     return false;
@@ -399,27 +358,34 @@ class Player {
 
   boost::optional<Point> Tumo(Field &field, bool isRinsyan) {
     const auto pai = isRinsyan ? field.GetRinsyan() : field.GetTumoPai();
-    assert(pai != Pai::Invalid);
     if (!playerState.IsReachTenpai()) {
-      furitenList.clear();
+      river.ClearFuriten();
     }
     hand.Tumo(pai);
     FEVERMJ_LOG("ë“Çø:%x\n", hand.GetWait().waitPaiBits);
-    if (hand.IsWaitPai(hand.GetTumo())) {
+    if (hand.IsWaitPai(*hand.GetTumo())) {
       goalPai = pai;
-      FEVERMJ_LOG("ÉcÉÇÇ¡ÇΩ\n");
+      FEVERMJ_LOG("ÉcÉÇ\n");
       return IsTumoGoal(hand, squeal, field, playerState);
     }
     return boost::none;
   }
+
+  void SetReach() {
+    if (playerState.IsFirstTumo()) {
+      playerState.SetDoubleReach();
+    } else {
+      playerState.SetReach();
+    }
+    playerState.SetFirst();
+    AddPoint(-1000);
+  }
   
   Hand hand;
   Squeal squeal;
+  River river;
   int beforePoint;
   int point;
-  std::vector<int> riverList;
-  std::vector<Pai> furitenList;
-  std::vector<Pai> squealedList;
   PlayerState playerState;
   std::uint32_t notSelectableBits;
   Pai goalPai;

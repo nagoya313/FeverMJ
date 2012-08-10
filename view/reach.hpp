@@ -10,13 +10,13 @@ namespace FeverMJ { namespace View {
 class Reach : boost::noncopyable {
  public:
   void Draw(const Model::Players &players, const Utility::PaiImage &paiImage) {
-    if (players[Model::House::Up].GetPlayerState().IsReach()) {
+    if (players[Model::House::Up].IsReachTenpai()) {
       DrawGraph(296, 232, paiImage.GetReachBarHandle(0), TRUE);
     }
-    if (players[Model::House::Self].GetPlayerState().IsReach()) {
+    if (players[Model::House::Self].IsReachTenpai()) {
       DrawGraph(378, 288, paiImage.GetReachBarHandle(1), TRUE);
     }
-    if (players[Model::House::Down].GetPlayerState().IsReach()) {
+    if (players[Model::House::Down].IsReachTenpai()) {
       DrawGraph(528, 232, paiImage.GetReachBarHandle(0), TRUE);
     }
   }

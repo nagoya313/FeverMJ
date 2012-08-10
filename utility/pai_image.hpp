@@ -19,6 +19,22 @@ class PaiImage {
     breakHouseImage = LoadGraph("image/wareme.png");
   }
 
+  int GetSelfHandHandle(int pai) const {
+    return pai != Model::paiBack ?
+           pai >= Model::squealOffset ?
+           GetUpHandle(pai % Model::squealOffset) : GetHandHandle(pai) : GetBackHandle(0);
+  }
+
+  int GetSelfRiverHandle(int pai) const {
+    return pai < Model::squealOffset ? GetUpHandle(pai) : GetRightHandle(pai % Model::squealOffset);
+  }
+
+  int GetSelfSquealHandle(int pai) const {
+    return pai < 0 ?
+           GetBackHandle(0) : pai < Model::squealOffset ?
+           GetUpHandle(pai) : GetRightHandle(pai % Model::squealOffset);
+  }
+
   int GetHandHandle(int pai) const {
     assert(pai < Model::paiKindMax);
     return handImage[pai];

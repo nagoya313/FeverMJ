@@ -11,67 +11,58 @@
 namespace FeverMJ { namespace View {
 class Self : boost::noncopyable {
  public:
-  void Draw(const Controller::Input &input,
-            const Model::Field &field,
-            const Model::Player &self,
-            const Utility::PaiImage &paiImage) {
-    if (isKan) {
-      DrawKanHand(input, self, paiImage);
-    } else if (isTi) {
-      DrawTiHand(input, self, paiImage);
-    } else {
-      DrawHand(input, self, paiImage);
+  void Draw(const Controller::Input &input, const Model::Player &self, const Utility::PaiImage &paiImage) {
+    switch (state) {
+      case State::Kan:
+        DrawKanHand(input, self, paiImage);
+        break;
+      case State::Ti:
+        DrawTiHand(input, self, paiImage);
+        break;
+      default:
+        DrawHand(input, self, paiImage);
+        break;
     }
-    DrawSqueal(field, self, paiImage);
+    DrawSqueal(self, paiImage);
     DrawRiver(self, paiImage);
   }
 
   void SetFlowSet() {
-    isFlowSet = true;
+    state = State::Flow;
   }
 
   void SetStart() {
-    isFlowSet = false;
+    state = State::None;
   }
 
   template <typename Action>
   void SetSelectKanMode(Action action) {
-    isKan = true;
-    isTi = false;
-    isSelect = false;
+    state = State::Kan;
     kanAction = action;
   }
 
   template <typename Action>
   void SetSelectTiMode(Action action, const std::vector<Model::TiPair> &list) {
-    isKan = false;
-    isTi = true;
-    isSelect = false;
+    state = State::Ti;
     tiAction = action;
     tiList = list;
   }
 
   template <typename Action>
   void SetSelectReachMode(std::uint32_t index, Action action) {
-    isKan = false;
-    isTi = false;
-    isSelect = true;
+    state = State::Select;
     reachIndex = index;
     discardAction = action;
   }
 
   template <typename Action>
   void SetSelectMode(Action action) {
-    isKan = false;
-    isTi = false;
-    isSelect = true;
+    state = State::Select;
     discardAction = action;
   }
 
   void SetWaitMode() {
-    isKan = false;
-    isTi = false;
-    isSelect = false;
+    state = State::None;
     reachIndex = 0x0;
   }
 
@@ -99,22 +90,16 @@ class Self : boost::noncopyable {
   void DrawHand(const Controller::Input &input, const Model::Player &self, const Utility::PaiImage &paiImage) {
     const int size = self.GetHandSize();
     const int selectedIndex = SelectedPaiIndex(input.GetPoint(), size);
-    //FEVERMJ_LOG("ÉäÅ[É` %x\n, ", reachIndex);
     const bool checkReach = !(reachIndex && !(reachIndex & (1 << selectedIndex)));
     for (int i = 0; i < size; ++i) {
-      const int y = isSelect && i == selectedIndex && self.IsCutablePai(i) && checkReach ? 496 : 512;
-      const auto pai = self.GetHandPai(i);
-      const int handle = pai != Model::Pai::Invalid ?
-                         pai >= Model::squealOffset ?
-                         paiImage.GetUpHandle(pai % Model::squealOffset) : paiImage.GetHandHandle(pai) : paiImage.GetBackHandle(0);
-      DrawGraph(80 + 33 * i, y, handle, TRUE);
+      const int y = state == State::Select && i == selectedIndex && self.IsCutablePai(i) && checkReach ? 496 : 512;
+      DrawGraph(80 + 33 * i, y, paiImage.GetSelfHandHandle(self.GetHandPai(i)), TRUE);
     }
-    const Model::Pai tumo = self.GetTumo();
-    if (tumo != Model::Pai::Invalid) {
-      const int y = isSelect && selectedIndex == 14 && checkReach ? 496 : 512;
-      DrawGraph(105 + 33 * size, y, paiImage.GetHandHandle(tumo), TRUE);
+    if (const auto tumo = self.GetTumo()) {
+      const int y = state == State::Select && selectedIndex == 14 && checkReach ? 496 : 512;
+      DrawGraph(105 + 33 * size, y, paiImage.GetHandHandle(*tumo), TRUE);
     }
-    if (isSelect && input.IsClecked()) {
+    if (state == State::Select && input.IsClecked()) {
       if (selectedIndex >= 0 && selectedIndex < size && self.IsCutablePai(selectedIndex) && checkReach) {
         discardAction(selectedIndex);
       } else if (selectedIndex == 14 && checkReach) {
@@ -123,11 +108,8 @@ class Self : boost::noncopyable {
     }
   }
 
-  void DrawTiHand(const Controller::Input &input, const Model::Player &self, const Utility::PaiImage &paiImage) {
-    const int size = self.GetHandSize();
-    const int selectedIndex = SelectedPaiIndexWithoutTumo(input.GetPoint(), size);
-    const auto selectedPai = selectedIndex >= 0 ? self.GetHandPai(selectedIndex) : Model::Pai::Invalid;
-    std::pair<int, int> tiPair = {-1, -1};
+  Model::TiOptionalPair GetTiPair(const Model::PaiOptional &selectedPai) const {
+    Model::TiOptionalPair tiPair;
     for (const auto &pair : tiList) {
       if (selectedPai == pair.second) {
         tiPair = {pair.second, pair.first};
@@ -135,11 +117,21 @@ class Self : boost::noncopyable {
         tiPair = {pair.first, pair.second};
       }
     }
+    return tiPair;
+  }
+
+  void DrawTiHand(const Controller::Input &input, const Model::Player &self, const Utility::PaiImage &paiImage) {
+    const int size = self.GetHandSize();
+    const int selectedIndex = SelectedPaiIndexWithoutTumo(input.GetPoint(), size);
+    const Model::PaiOptional selectedPai = selectedIndex >= 0 ?
+                                           boost::make_optional(self.GetHandPai(selectedIndex)) : 
+                                           boost::none;
+    const auto tiPair = GetTiPair(selectedPai);
     int tiCount = 0;
-    std::pair<Model::Pai, Model::Pai> erasePair = {Model::Pai::Invalid, Model::Pai::Invalid};
+    Model::TiOptionalPair erasePair;
     for (int i = 0; i < self.GetHandSize(); ++i) {
       int y = 512;
-      const Model::Pai pai = self.GetHandPai(i);
+      const auto pai = self.GetHandPai(i);
       if (!tiCount) {
         if (pai == tiPair.first) {
           tiCount = 1;
@@ -163,22 +155,21 @@ class Self : boost::noncopyable {
       }
       DrawGraph(80 + 33 * i, y, paiImage.GetHandHandle(pai), TRUE);
     }
-    if (erasePair.first != Model::Pai::Invalid && erasePair.second != Model::Pai::Invalid && input.IsClecked()) {
-      tiAction(erasePair);
+    if (erasePair.first && erasePair.second && input.IsClecked()) {
+      tiAction({*erasePair.first, *erasePair.second});
     }
   }
 
   void DrawKanHand(const Controller::Input &input, const Model::Player &self, const Utility::PaiImage &paiImage) {
     const int size = self.GetHandSize();
-    const auto tumo = self.GetTumo();
+    const auto tumo = *self.GetTumo();
     const int selectedIndex = SelectedPaiIndex(input.GetPoint(), size);
-    const auto selectedPai = selectedIndex >= 0 && selectedIndex < size ? 
-                             self.GetHandPai(selectedIndex) : 
-                             Model::Pai::Invalid;
-    const auto darkKanPai = selectedPai != Model::Pai::Invalid && self.IsDarkKanEnablePai(selectedPai) ?
-                            selectedPai : selectedIndex == 14 && self.IsDarkKanEnablePai(tumo) ?
-                            tumo : 
-                            Model::Pai::Invalid;
+    const boost::optional<Model::Pai> selectedPai = selectedIndex >= 0 && selectedIndex < size ? 
+                                                    boost::make_optional(self.GetHandPai(selectedIndex)) : 
+                                                    boost::none;
+    const boost::optional<Model::Pai> darkKanPai = selectedPai && self.IsDarkKanEnablePai(*selectedPai) ?
+                                                   *selectedPai : self.IsDarkKanEnablePai(tumo) ?
+                                                   boost::make_optional(tumo) : boost::none;
     for (int i = 0; i < self.GetHandSize(); ++i) {
       const auto currentPai = self.GetHandPai(i);
       const int y = currentPai == darkKanPai || (i == selectedIndex && self.IsAddKanEnablePai(currentPai)) ? 496 : 512;
@@ -190,15 +181,15 @@ class Self : boost::noncopyable {
       if (selectedIndex >= 0 && selectedIndex < size) {
         const auto currentPai = self.GetHandPai(selectedIndex);
         if (currentPai == darkKanPai) {
-          kanAction(currentPai, Model::Pai::Invalid);
+          kanAction(currentPai, boost::none);
         } else if (self.IsAddKanEnablePai(currentPai)) {
-          kanAction(Model::Pai::Invalid, currentPai);
+          kanAction(boost::none, currentPai);
         }
       } else if (selectedIndex == 14) {
-        if (tumo == darkKanPai) {
-          kanAction(tumo, Model::Pai::Invalid);
+        if (darkKanPai && tumo == darkKanPai) {
+          kanAction(tumo, boost::none);
         } else if (self.IsAddKanEnablePai(tumo)) {
-          kanAction(Model::Pai::Invalid, tumo);
+          kanAction(boost::none, tumo);
         }
       }
     }
@@ -212,35 +203,35 @@ class Self : boost::noncopyable {
         x = 320;
       }
       const auto pai = self.GetRiverImageHandle(i);
-      DrawGraph(x, 320 + 44 * (i / 6),
-                pai < Model::squealOffset ? paiImage.GetUpHandle(pai) : paiImage.GetRightHandle(pai % Model::squealOffset), TRUE);
-      x += self.GetRiverImageHandle(i) < Model::squealOffset ? 33 : 44;
+      DrawGraph(x, 320 + 44 * (i / 6), paiImage.GetSelfRiverHandle(pai), TRUE);
+      x += pai < Model::squealOffset ? 33 : 44;
     }
   }
 
-  void DrawSqueal(const Model::Field &field, const Model::Player &self, const Utility::PaiImage &paiImage) {
-    int pos = field.GetFirstParentHouse() == Model::House::Self ? 738 : 800;
+  void DrawSqueal(const Model::Player &self, const Utility::PaiImage &paiImage) {
+    int pos = 800;
     const int size = self.GetSquealSize();
     for (int i = 0; i < size; ++i) {
       const int pai = self.GetSquealImageHandle(i);
       pos -= pai < Model::squealOffset ? 33 : 44;
-      const int image = pai < 0 ?
-                        paiImage.GetBackHandle(0) : pai < Model::squealOffset ?
-                        paiImage.GetUpHandle(pai) : paiImage.GetRightHandle(pai % Model::squealOffset);
       if (pai >= Model::squealOffset * 2) {
-        DrawGraph(pos, 514, image, TRUE);
+        DrawGraph(pos, 519, paiImage.GetSelfSquealHandle(pai), TRUE);
       }
-      DrawGraph(pos, pai < Model::squealOffset ? 536 : 546, image, TRUE);
+      DrawGraph(pos, pai < Model::squealOffset ? 541 : 551, paiImage.GetSelfSquealHandle(pai), TRUE);
     }
   }
 
-  bool isFlowSet = false;
-  bool isKan = false;
-  bool isTi = false;
-  bool isSelect = false;
+  enum class State {
+    None,
+    Flow,
+    Kan,
+    Ti,
+    Select
+  } state = State::None;
   std::uint32_t reachIndex = 0x0;
   std::function<void (int)> discardAction{[](int) {}};
-  std::function<void (Model::Pai, Model::Pai)> kanAction{[](Model::Pai, Model::Pai) {}};
+  std::function<void (const boost::optional<Model::Pai> &, const boost::optional<Model::Pai> &)> 
+      kanAction{[](const boost::optional<Model::Pai> &, const boost::optional<Model::Pai> &) {}};
   std::function<void (const Model::TiPair &)> tiAction{[](const Model::TiPair &) {}};
   std::vector<std::pair<Model::Pai, Model::Pai>> tiList;
 };

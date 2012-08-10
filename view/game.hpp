@@ -28,7 +28,7 @@ class Game : boost::noncopyable {
     firstParentView.Draw(field, paiImage);
     breakHouseView.Draw(field, paiImage);
     reachView.Draw(players, paiImage);
-    playersView.Draw(input, field, players, paiImage);
+    playersView.Draw(input, players, paiImage);
     squealView.Draw(input);
     statusView.Draw(field, players);
     resultView.Draw(field, players, input, paiImage);
@@ -101,6 +101,7 @@ class Game : boost::noncopyable {
 
   void SetStart() {
     statusView.SetResult(false);
+    squealView.AllReset();
     resultView.SetStart();
     notSquealButton.SetHide(false);
   }

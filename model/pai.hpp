@@ -2,11 +2,12 @@
 #define FEVERMJ_MODEL_PAI_HPP_
 #include <cassert>
 #include <array>
+#include <vector>
+#include <boost/optional.hpp>
 
 namespace FeverMJ { namespace Model {
 namespace Pai_ {
 enum Pai {
-  Invalid = -1,
   M1 = 0,
   M9 = 1,
   P1 = 2,
@@ -83,54 +84,47 @@ using RoleBits_::RoleBits;
 
 constexpr int paiKindMax = 27;
 constexpr int squealOffset = 32;
+constexpr int paiBack = -1;
+constexpr int upOffset = 1;
+constexpr int leftOffset = 2;
+constexpr int donwOffset = 3;
+constexpr int rightOffset = 4;
 
 using PaiKindArray = std::array<int, paiKindMax>;
 using PaiKindBitset = std::uint32_t;
 using HandVector = std::vector<int>;
 using DoraVector = std::vector<Pai>;
+using PaiOptional = boost::optional<Pai>;
 using TiPair = std::pair<Pai, Pai>;
+using TiOptionalPair = std::pair<boost::optional<Model::Pai>, boost::optional<Model::Pai>>;
 
 inline
 bool IsSameColor(int lhs, int rhs) {
-  assert(lhs != Pai::Invalid);
-  assert(rhs != Pai::Invalid);
-  assert(lhs <= Pai::Center);
-  assert(rhs <= Pai::Center);
   return (lhs - Pai::P1) / 9 == (rhs - Pai::P1) / 9;
 }
 
 inline
 Color GetColor(int pai) {
-  assert(pai != Pai::Invalid);
-  assert(pai <= Pai::Center);
   return static_cast<Color>((pai - Pai::P1) / 9);
 }
 
 inline
 int GetNumber(int pai) {
-  assert(pai != Pai::Invalid);
-  assert(pai <= Pai::Center);
   return (pai - Pai::P1) % 9;
 }
 
 inline
 bool IsTyuntyanPai(int pai) {
-  assert(pai != Pai::Invalid);
-  assert(pai <= Pai::Center);
   return RoleBits::Tanyao & (1 << pai);
 }
 
 inline
 bool IsWordPai(int pai) {
-  assert(pai != Pai::Invalid);
-  assert(pai <= Pai::Center);
   return pai >= Pai::East;
 }
 
 inline
 bool IsRolePai(int pai) {
-  assert(pai != Pai::Invalid);
-  assert(pai <= Pai::Center);
   return pai >= Pai::North;
 }
 
@@ -141,7 +135,6 @@ bool IsStraightEnablePai(int pai) {
 
 inline
 Pai GetDora(Pai displayDora) {
-  assert(displayDora != Pai::Invalid);
   switch (displayDora) {
     case Pai::M1:
       return Pai::M9;

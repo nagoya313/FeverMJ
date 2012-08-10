@@ -24,7 +24,6 @@
 namespace FeverMJ { namespace Model {
 inline
 std::vector<TenpaiPatern> GetGoalPatern(Pai pai, const std::vector<TenpaiPatern> &tenpais) {
-  assert(pai != Pai::Invalid);
   std::vector<TenpaiPatern> goals;
   boost::copy_if(tenpais, std::back_inserter(goals), [pai](const TenpaiPatern &hand) {
     FEVERMJ_LOG("%x\n", hand.IsGoalEnable(pai));
@@ -80,9 +79,12 @@ inline
 boost::optional<Point> IsTumoGoal(const Hand &hand, const Squeal &squeal, const Field &field, const PlayerState &playerState) {
   const auto wait = hand.GetWait();
   const auto kind = hand.GetPaiKindArray();
-  std::vector<HandRole> states = GetHandRoles(GetGoalPatern(hand.GetTumo(), wait.tenpaiPatern), playerState.GetSelfWind(), hand.GetTumo(), true);
+  std::vector<HandRole> states = GetHandRoles(GetGoalPatern(*hand.GetTumo(), wait.tenpaiPatern),
+                                              playerState.GetSelfWind(),
+                                              *hand.GetTumo(),
+                                              true);
   const auto squealRole = squeal.GetSquealRole(field.GetDoraList(playerState.IsReachTenpai()));
-  HandCommonRole common{playerState.GetSelfWind(), true, hand.GetHandSize(), kind, field, playerState};
+  HandCommonRole common{0x0, playerState.GetSelfWind(), true, hand.GetHandSize(), kind, field, playerState};
   RoleResult result = GetPreRole(kind, common, squealRole);
   std::vector<Point> results;
   for (const auto &state : states) {
@@ -104,13 +106,18 @@ boost::optional<Point> IsTumoGoal(const Hand &hand, const Squeal &squeal, const 
 }
 
 inline
-boost::optional<Point> IsRonGoal(Pai pai, const Hand &hand, const Squeal &squeal, const Field &field, const PlayerState &playerState) {
+boost::optional<Point> IsRonGoal(std::uint32_t role, 
+                                 Pai pai,
+                                 const Hand &hand,
+                                 const Squeal &squeal,
+                                 const Field &field,
+                                 const PlayerState &playerState) {
   const auto wait = hand.GetWait();
   auto kind = hand.GetPaiKindArray();
   ++kind[pai];
   std::vector<HandRole> states = GetHandRoles(GetGoalPatern(pai, wait.tenpaiPatern), playerState.GetSelfWind(), pai, false);
   const auto squealRole = squeal.GetSquealRole(field.GetDoraList(playerState.IsReachTenpai()));
-  HandCommonRole common{playerState.GetSelfWind(), false, hand.GetHandSize(), kind, field, playerState};
+  HandCommonRole common{role, playerState.GetSelfWind(), false, hand.GetHandSize(), kind, field, playerState};
   RoleResult result = GetPreRole(kind, common, squealRole);
   std::vector<Point> results;
   for (const auto &state : states) {

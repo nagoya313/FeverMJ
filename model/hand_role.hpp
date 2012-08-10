@@ -140,7 +140,7 @@ class HandRole {
   }
 
   void CheckStraightRoleState(WaitType waitType, Pai waitHint, Pai goalPai, const std::vector<Pai> &straightList) {
-    Pai beforePai = Pai::Invalid;
+    boost::optional<Pai> beforePai;
     const auto list = GoalPaiAddStraight(waitType, waitHint, goalPai, straightList);
     int straightKindCount = 0;
     int straightCount = 0;
@@ -152,11 +152,11 @@ class HandRole {
       if (!(number % 3)) {
         straightBits |= 1 << (3 * GetColor(pai) + number / 3);
       }
-      if (pai != beforePai) {
+      if (pai) {
         ++straightKindCount;
         beforePai = pai;
       } else {
-        beforePai = Pai::Invalid;
+        beforePai = boost::none;
       }
       ++straightCount;
     }

@@ -3,6 +3,7 @@
 #include <cassert>
 #include <deque>
 #include <vector>
+#include <boost/optional.hpp>
 #include "house.hpp"
 #include "pai.hpp"
 
@@ -29,20 +30,20 @@ class OneMountain {
     return doraCount;
   }
 
-  Pai GetDisplayDora(int i) const {
-    return i < GetDoraCount() ? mountain[10 - 2 * i] : Pai::Invalid;
+  boost::optional<Pai> GetDisplayDora(int i) const {
+    return i < GetDoraCount() ? boost::make_optional(mountain[10 - 2 * i]) : boost::none;
   }
 
-  Pai GetDisplayReverceDora(int i) const {
-    return i < GetDoraCount() ? mountain[10 - (2 * i + 1)] : Pai::Invalid;
+  boost::optional<Pai> GetDisplayReverceDora(int i) const {
+    return i < GetDoraCount() ? boost::make_optional(mountain[10 - (2 * i + 1)]) : boost::none;
   }
 
   DoraVector GetDoraList(bool withReverse) const {
     DoraVector doraList = {Pai::M1, Pai::M9, Pai::North};
     for (int i = 0; i < GetDoraCount(); ++i) {
-      doraList.push_back(GetDora(GetDisplayDora(i)));
+      doraList.push_back(GetDora(*GetDisplayDora(i)));
       if (withReverse) {
-        doraList.push_back(GetDora(GetDisplayReverceDora(i)));
+        doraList.push_back(GetDora(*GetDisplayReverceDora(i)));
       }
     }
     return doraList;

@@ -5,19 +5,19 @@
 #include "title.hpp"
 
 namespace FeverMJ { namespace Controller {
-std::unique_ptr<Sequence> GotoGame() {
-  return std::unique_ptr<Sequence>{new Game{}};
+SequencePtr GotoGame(int firstParent, int seed, Utility::NetHandleArray &&handles) {
+  return SequencePtr{new Game{firstParent, seed, std::move(handles)}};
 }
 
-std::unique_ptr<Sequence> GotoTitle() {
-  return std::unique_ptr<Sequence>{new Title{}};
+SequencePtr GotoTitle() {
+  return SequencePtr{new Title{}};
 }
 
-std::unique_ptr<Sequence> GotoServer() {
-  return std::unique_ptr<Sequence>{new Server{}};
+SequencePtr GotoServer() {
+  return SequencePtr{new Server{}};
 }
 
-std::unique_ptr<Sequence> GotoClient() {
-  return std::unique_ptr<Sequence>{new Client{}};
+SequencePtr GotoClient() {
+  return SequencePtr{new Client{}};
 }
 }}

@@ -25,6 +25,10 @@ class Field {
     bar += 1000;
   }
 
+  void RemoveReachBar() {
+    bar -= 1000;
+  }
+
   int ReleaseReachBar() {
     int temp = bar;
     bar = 0;
@@ -60,7 +64,7 @@ class Field {
 
   House GetParentHouse() const {
     House house = GetFirstParentHouse();
-    for (int i = 0; i < GetSetCount(); ++i) {
+    for (int i = 0; i < GetSetCount() - 1; ++i) {
       house = GetDownHouse(house);
     }
     return house;
@@ -99,7 +103,7 @@ class Field {
     return oneMountain.GetDoraCount();
   }
 
-  Pai GetDisplayDora(int i) const {
+  boost::optional<Pai> GetDisplayDora(int i) const {
     return oneMountain.GetDisplayDora(i);
   }
 
@@ -114,24 +118,17 @@ class Field {
     oneMountain.Init(tumoMountain.PopOnePais());
   }
 
-  House GetCurrentParent() const {
-    return !setCount ?
-           firstParentHouse : setCount == 1 ?
-                              GetDownHouse(firstParentHouse) :
-                              GetUpHouse(firstParentHouse);
-  }
-
   House SelectBreakHouse() const {
     switch ((GetRand(10) + 2) % 3) {
       case 0:
-        return GetCurrentParent();
+        return GetParentHouse();
       case 1:
-        return GetDownHouse(GetCurrentParent());
+        return GetDownHouse(GetParentHouse());
       case 2:
-        return GetUpHouse(GetCurrentParent());
+        return GetUpHouse(GetParentHouse());
       default:
         assert(false);
-        return GetCurrentParent();
+        return GetParentHouse();
     }
   }
 

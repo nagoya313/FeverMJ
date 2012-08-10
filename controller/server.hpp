@@ -2,7 +2,7 @@
 #define FEVERMJ_CONTROLLER_SERVER_HPP_
 #include <array>
 #include <functional>
-#include <iostream>
+#include <limits>
 #include <string>
 #include <DxLib.h>
 #include <boost/lexical_cast.hpp>
@@ -22,108 +22,97 @@ class Server : public Sequence {
     serverView.Init([this] {
       next = GotoTitle();
     });
+    FEVERMJ_LOG("seed %d\n", seed);
   }
 
   ~Server() {
     StopListenNetWork();
-    for (const int handle : netHandles) {
-      if (handle != -1) {
-        CloseNetWork(handle);
-      }
-    }
   }
 
-  std::unique_ptr<Sequence> Update() {
+  SequencePtr Update() {
     input.Update();
     serverView.Draw(input, waitCount);
-    sequence();
+    try {
+      sequence();
+    } catch (const Utility::NetWorkError &error) {
+      MessageBox(GetMainWindowHandle(), error.what(), "エラー", 0);
+      return GotoTitle();
+    } catch (...) {
+      throw;
+    }
     return std::move(next);
   }
 
  private:
-  void WaitConnect() {
-    netHandles[waitCount] = GetNewAcceptNetWork(); 
-    if (netHandles[waitCount] != -1) {
-      if (++waitCount == 2) {
-        StopListenNetWork();
-        IPDATA ip;
-        GetNetWorkIP(netHandles[1], &ip);
-       char send0[] = "ipsd";
-        if (NetWorkSend(netHandles[0], send0, 4) == -1) {
-          if (NetWorkSend(netHandles[0], send0, 4) == -1) {
-            MessageBox(GetMainWindowHandle(), "送信失敗", "エラー", 0);
-            next = GotoTitle();
-          }
-        }
-        char send1[] = "wait";
-        if (NetWorkSend(netHandles[0], send1, 4) == -1) {
-          if (NetWorkSend(netHandles[0], send1, 4) == -1) {
-            MessageBox(GetMainWindowHandle(), "送信失敗", "エラー", 0);
-            next = GotoTitle();
-          }
-        }
-        sequence = [this] {};
-      }
-    }
-  }
-  
-   /*
-  void SendInit() {
-    currentHouse = GetRand(2);
-    const std::string sendMessage[] = {
-      "f" + boost::lexical_cast<std::string>((currentHouse + 1) % 3),
-      "f" + boost::lexical_cast<std::string>(currentHouse),
-      "f" + boost::lexical_cast<std::string>((currentHouse + 2) % 3)
-    };
-    for (int i = 0; i < 3) {
-      NetWorkSend(netHandles[i], sendMessage[i].c_str(), sendMessage[i].length());
-    }
-    bool respResult[] = {}
-    while(!ProcessMessage()) {
-      for (int i = 0; i < 3; ++i) {
-        if (const int length = GetNetWorkDataLength(netHandles[i])) {
-          if (length == 3) {
-            std::array<char, 3> strBuf;
-            NetWorkRecv(netHandle[i], strBuf.data(), length);
-            if (std::string(strBuf.data(), 3) == "fok") {
-              respResult[i] = true;
-            } else {
-              NetWorkSend(netHandles[i], sendMessage[i].c_str(), sendMessage[i].length());
-            }
-			    } else {
-			      NetWorkSend(netHandles[i], sendMessage[i].c_str(), sendMessage[i].length());
-			    }
-			  }
-      }
-      if (boost::all_of(respResult, [](bool x) {return x;})) {
-        return;
-      }
-		}
-		sequence = [this] {SendTumo();};
+  void SendClient1() {
+    std::string send = "fp" + boost::lexical_cast<std::string>((firstParent + 1) % 3) + 
+                       "sd" + Utility::GetSeedString(seed) +
+                       "wait" + "000.000.000.000";
+    FEVERMJ_LOG("送信データ %s 送信サイズ %d\n", send.c_str(), send.length());
+    netHandles[0].Send(send);
+    sequence = [this] {ReceiveClient1();};
   }
 
-  void SendTumo() {
-    const std::string tumoStr = "";
-    NetWorkSend(netHandles[currentHouse], tumoStr.c_str(), tumoStr.length());
-  }
- 
-  int CheckLost() const {
-    const auto it = boost::find(netHandles, GetLostNetWork());
-    if (it != networkHandle.end()) {
-      const int lostID = std::distance(netHandles.begin(), it);
-      std::cout << lostID << " network lost." << std::endl; 
-      return lostID;
+  void ReceiveClient1() {
+    if (const auto recv = netHandles[0].Receive(4)) {
+      if (*recv == "wait") {
+        SendClient2();
+        sequence = [this] {ReceiveClient2();};
+      } else {
+        throw Utility::NetWorkError("受信失敗");
+      }
     }
-    return -1;
   }
-  */
+
+  void SendClient2() {
+    IPDATA ip;
+    GetNetWorkIP(netHandles[0].Get(), &ip);
+    std::string send = "fp" + boost::lexical_cast<std::string>((firstParent + 2) % 3) + 
+                       "sd" + Utility::GetSeedString(seed) +
+                       "ipsd" + Utility::GetIPString(ip);
+    FEVERMJ_LOG("送信データ %s 送信サイズ %d\n", send.c_str(), send.length());
+    netHandles[1].Send(send);
+  }
+
+  void ReceiveClient2() {
+    if (const auto recv = netHandles[1].Receive(7)) {
+      if (*recv == "connect") {
+        sequence = [this] {ReceiveClient3();};
+      } else {
+        throw Utility::NetWorkError("受信失敗");
+      }
+    }
+  }
+
+  void ReceiveClient3() {
+    if (const auto recv = netHandles[0].Receive(7)) {
+      if (*recv == "connect") {
+        next = GotoGame(firstParent, seed, std::move(netHandles));
+      } else {
+        throw Utility::NetWorkError("受信失敗");
+      }
+    }
+  }
+
+  void WaitConnect() {
+    netHandles[waitCount] = Utility::NetWorkHandle{GetNewAcceptNetWork()}; 
+    if (netHandles[waitCount]) {
+      ++waitCount;
+      if (waitCount == 2) {
+        StopListenNetWork();
+        SendClient1();
+      }
+    }
+  }
   
   Input input;
-  std::array<int, 2> netHandles;
+  Utility::NetHandleArray netHandles = {{}};
   int waitCount = 0;
   std::function<void ()> sequence = [] {};
   View::Server serverView;
-  std::unique_ptr<Sequence> next = nullptr;
+  SequencePtr next = nullptr;
+  const int firstParent = GetRand(2);
+  const std::uint32_t seed = GetRand(std::numeric_limits<int>::max()); 
 };
 }}
 

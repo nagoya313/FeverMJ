@@ -12,13 +12,13 @@ class FirstParent : boost::noncopyable {
   void Draw(const Model::Field &field, const Utility::PaiImage &paiImage) {
     switch (field.GetFirstParentHouse()) {
       case Model::House::Up:
-        DrawGraph(-16, 537, paiImage.GetFirstParentHandle(2), TRUE);
+        DrawGraph(96, 386, paiImage.GetFirstParentHandle(2), TRUE);
         break;
       case Model::House::Self:
-        DrawGraph(738, 549, paiImage.GetFirstParentHandle(0), TRUE);
+        DrawGraph(608, 416, paiImage.GetFirstParentHandle(0), TRUE);
         break;
       case Model::House::Down:
-        DrawGraph(752, -2, paiImage.GetFirstParentHandle(3), TRUE);
+        DrawGraph(640, 32, paiImage.GetFirstParentHandle(3), TRUE);
         break;
       default:
         break;

@@ -13,12 +13,9 @@
 namespace FeverMJ { namespace View {
 class Players : boost::noncopyable {
  public:
-  void Draw(const Controller::Input &input,
-            const Model::Field &field,
-            const Model::Players &players,
-            const Utility::PaiImage &paiImage) {
+  void Draw(const Controller::Input &input, const Model::Players &players, const Utility::PaiImage &paiImage) {
     upHouseView.Draw(players[Model::House::Up], paiImage);
-    selfView.Draw(input, field, players[Model::House::Self], paiImage);
+    selfView.Draw(input, players[Model::House::Self], paiImage);
     downHouseView.Draw(players[Model::House::Down], paiImage);
   }
 

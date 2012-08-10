@@ -3,6 +3,8 @@
 #include <cassert>
 #include <array>
 #include <vector>
+#include <boost/phoenix.hpp>
+#include <boost/optional.hpp>
 #include "check_role.hpp"
 #include "check_tenpai.hpp"
 #include "field.hpp"
@@ -18,10 +20,10 @@ namespace FeverMJ { namespace Model {
 class Hand {
  public:
   void Init(HandVector &&firstPai) {
-    tumo = Pai::Invalid;
+    tumo = boost::none;
     hand = std::move(firstPai);
     boost::sort(hand);
-    kind = {};
+    boost::fill(kind, 0);
     for (const auto pai : hand) {
       ++kind[pai];
     }
@@ -34,19 +36,21 @@ class Hand {
   }
 
   Pai TumoCut() {
-    const auto pai = tumo;
+    const auto pai = *tumo;
+    assert(kind[pai]);
     --kind[pai];
-    tumo = Pai::Invalid;
-    return static_cast<Pai>(pai);
+    tumo = boost::none;
+    return pai;
   }
 
   Pai HandCut(int i) {
     const auto pai = hand[i];
+    assert(kind[pai]);
     --kind[pai];
     hand.erase(std::next(hand.begin(), i));
-    if (tumo != Pai::Invalid) {
-      hand.insert(boost::lower_bound(hand, tumo), tumo);
-      tumo = Pai::Invalid;
+    if (tumo) {
+      hand.insert(boost::lower_bound(hand, *tumo), *tumo);
+      tumo = boost::none;
     }
     return static_cast<Pai>(pai);
   }
@@ -56,15 +60,15 @@ class Hand {
     --kind[Pai::North];
     if (tumo != Pai::North) {
       hand.erase(boost::equal_range(hand, Pai::North).first);
-      hand.insert(boost::lower_bound(hand, tumo), tumo);
+      hand.insert(boost::lower_bound(hand, *tumo), *tumo);
     }
-    tumo = Pai::Invalid;
+    tumo = boost::none;
   }
 
   void Ti(const TiPair &tiPair) {
-    assert(tiPair.first != Pai::Invalid);
-    assert(tiPair.second != Pai::Invalid);
     assert(tiPair.first < tiPair.second);
+    assert(kind[tiPair.first]);
+    assert(kind[tiPair.second]);
     --kind[tiPair.first];
     --kind[tiPair.second];
     hand.erase(boost::equal_range(hand, tiPair.first).first);
@@ -72,7 +76,6 @@ class Hand {
   }
 
   void Pon(Pai pai) {
-    assert(pai != Pai::Invalid);
     assert(kind[pai] >= 2);
     kind[pai] -= 2;
     const auto pair = boost::equal_range(hand, pai);
@@ -81,30 +84,28 @@ class Hand {
   }
 
   void DarkKan(Pai pai, bool isOpen) {
-    assert(pai != Pai::Invalid);
     assert(kind[pai] == 4);
     kind[pai] -= 4;
-    const auto pair = isOpen ? boost::equal_range(hand, pai + squealOffset) : boost::equal_range(hand, pai);
+    const auto pair = boost::equal_range(hand, isOpen ? pai + squealOffset : pai);
     assert(pair.first != pair.second);
     hand.erase(pair.first, pair.second);
     if (pai != tumo) {
-      hand.insert(boost::lower_bound(hand, tumo), tumo);
+      hand.insert(boost::lower_bound(hand, *tumo), *tumo);
     }
-    tumo = Pai::Invalid;
+    tumo = boost::none;
   }
 
   void AddKan(Pai pai) {
-    assert(pai != Pai::Invalid);
+    assert(kind[pai]);
     --kind[pai];
     if (pai != tumo) {
       hand.erase(boost::equal_range(hand, pai).first);
-      hand.insert(boost::lower_bound(hand, tumo), tumo);
+      hand.insert(boost::lower_bound(hand, *tumo), *tumo);
     }
-    tumo = Pai::Invalid;
+    tumo = boost::none;
   }
 
   void LightKan(Pai pai) {
-    assert(pai != Pai::Invalid);
     assert(kind[pai] == 3);
     kind[pai] -= 3;
     const auto pair = boost::equal_range(hand, pai);
@@ -112,7 +113,7 @@ class Hand {
     hand.erase(pair.first, pair.second);
   }
 
-  Pai GetTumo() const {
+  boost::optional<Pai> GetTumo() const {
     return tumo;
   }
 
@@ -125,21 +126,16 @@ class Hand {
   }
 
   int GetPaiCount(Pai pai) const {
-    assert(pai != Pai::Invalid);
     return kind[pai];
   }
 
   bool IsDarkKanEnable() const {
-    for (const int size : kind) {
-      if (size == 4) {
-        return true;
-      }
-    }
-    return false;
+    using boost::phoenix::arg_names::arg1;
+    return boost::any_of(kind, arg1 == 4);
   }
 
   bool IsReachKanEnable() const {
-    return kind[tumo] == 4 && boost::all_of(wait.tenpaiPatern, [this](const TenpaiPatern &x) {return x.IsReachKanEnable(tumo);});
+    return kind[*tumo] == 4 && boost::all_of(wait.tenpaiPatern, [this](const TenpaiPatern &x) {return x.IsReachKanEnable(*tumo);});
   }
 
   std::vector<TiPair> GetTiCandidate(Pai pai) const {
@@ -163,25 +159,21 @@ class Hand {
   }
 
   std::vector<WaitPair> GetReachPatern() const {
-    return Model::GetReachPatern(tumo, hand, kind);
+    return Model::GetReachPatern(*tumo, hand, kind);
   }
 
   void SetOpenReach() {
-    for (auto &pai : hand) {
-      pai += squealOffset;
-    }
+    using boost::phoenix::arg_names::arg1;
+    boost::transform(hand, hand.begin(), arg1 + squealOffset);
   }
 
   void SetFlow() {
-    for (auto &pai : hand) {
-      pai = Pai::Invalid;
-    }
+    boost::fill(hand, paiBack);
   }
 
   void SetTenpai() {
-    for (auto &pai : hand) {
-      pai += squealOffset;
-    }
+    using boost::phoenix::arg_names::arg1;
+    boost::transform(hand, hand.begin(), boost::phoenix::if_else(arg1 < squealOffset, arg1 + squealOffset, arg1));
   }
 
   PaiKindArray GetPaiKindArray() const {
@@ -191,7 +183,7 @@ class Hand {
  private:
   HandVector hand;
   PaiKindArray kind;
-  Pai tumo;
+  boost::optional<Pai> tumo;
   WaitPair wait;
 };
 }}

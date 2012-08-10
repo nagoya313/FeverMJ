@@ -14,7 +14,7 @@ namespace FeverMJ { namespace Controller {
 class Client: public Sequence {
  public:
   Client() {
-    PreparationListenNetWork(18000);
+    PreparationListenNetWork(10000);
     sequence = [this] {WaitConnect();};
     clientView.Init([this] {
       next = GotoTitle();
@@ -23,29 +23,30 @@ class Client: public Sequence {
 
   ~Client() {
     StopListenNetWork();
-    for (const int handle : netHandles) {
-      if (handle != -1) {
-        CloseNetWork(handle);
-      }
-    }
   }
 
-  std::unique_ptr<Sequence> Update() {
+  SequencePtr Update() {
     input.Update();
     clientView.Draw(input);
-    sequence();
+    try {
+      sequence();
+    } catch (const Utility::NetWorkError &error) {
+      MessageBox(GetMainWindowHandle(), error.what(), "エラー", 0);
+      return GotoTitle();
+    } catch (...) {
+      throw;
+    }
     return std::move(next);
   }
 
  private:
   void WaitConnect() {
-    char iptemp[17];
-    KeyInputString(0, 40, 17, iptemp, FALSE); 
+    char iptemp[17] = "127.0.0.1";
+    //KeyInputString(0, 40, 17, iptemp, FALSE); 
     if (const auto  ip = Utility::GetIP(std::string{iptemp})) {
-      netHandles[0] = ConnectNetWork(*ip, 10000);
-      if (netHandles[0] == -1) {
-        MessageBox(GetMainWindowHandle(), "接続失敗", "エラー", 0);
-        next = GotoTitle();
+      netHandles[0] = Utility::NetWorkHandle{ConnectNetWork(*ip, 10000)};
+      if (!netHandles[0]) {
+        throw Utility::NetWorkError{"接続失敗"};
       } else {
         sequence = [this] {WaitResponse();};
       }
@@ -55,74 +56,51 @@ class Client: public Sequence {
   }
 
   void WaitResponse() {
-    char recv[4];
-    if (GetNetWorkDataLength(netHandles[0]) == 4) {
-      NetWorkRecv(netHandles[0], recv, 4);
-      const std::string str{recv, 4};
-      if (str == "ipsd") {
-        sequence = [this] {WaitIP();};
-      } else if (str == "wait") {
-        PreparationListenNetWork(10000);
-        sequence = [this] {WaitConnect2();};
-      } else {
-        MessageBox(GetMainWindowHandle(), "接続失敗", "エラー", 0);
-        next = GotoTitle();
-      }
-    }
-  }
-
-  void WaitConnect2() {
-    netHandles[1] = GetNewAcceptNetWork(); 
-    if (netHandles[1] != -1) {
-      StopListenNetWork();
-      sequence = [this] {WaitSeed();};  
-    } else {
-      MessageBox(GetMainWindowHandle(), "接続失敗", "エラー", 0);
-      next = GotoTitle();
-    }
-  }
-
-  void WaitSeed() {
-    char send[] = "reqs";
-    if (NetWorkSend(netHandles[0], send, 4) == -1) {
-      if (NetWorkSend(netHandles[0], send, 4) == -1) {
-        MessageBox(GetMainWindowHandle(), "送信失敗", "エラー", 0);
-        next = GotoTitle();
-      }
-    }
-  }
-
-  void WaitIP() {
-    char send[] = "reqi";
-    if (NetWorkSend(netHandles[0], send, 4) == -1) {
-      if (NetWorkSend(netHandles[0], send, 4) == -1) {
-        MessageBox(GetMainWindowHandle(), "送信失敗", "エラー", 0);
-        next = GotoTitle();
-      }
-    }
-    char recv[15];
-    if (GetNetWorkDataLength(netHandles[0]) == 15 && NetWorkRecv(netHandles[0], recv, 15)) {
-      if (const auto  ip = Utility::GetIP(std::string{recv, 15})) {
-        netHandles[1] = ConnectNetWork(*ip, 10000);
-        if (netHandles[1] == -1) {
-          MessageBox(GetMainWindowHandle(), "接続失敗", "エラー", 0);
-          next = GotoTitle();
+    constexpr int recvSize = 2 + 1 + 2 + std::numeric_limits<std::uint32_t>::digits10 + 1 + 4 + 15;
+    if (const auto recv = netHandles[0].Receive(recvSize)) {
+      if (const auto data = Utility::GetInitData(*recv)) {
+        if (data->func == "ipsd") {
+          FEVERMJ_LOG("待ち\n 受信サイズ %d", recvSize);
+          if (const auto ip = Utility::GetIP("127.0.0.2"/*data->ip*/)) {
+            netHandles[1] = Utility::NetWorkHandle{ConnectNetWork(*ip, 10000)};
+            if (!netHandles[1]) {
+              throw Utility::NetWorkError{"接続失敗"};
+            } else {
+              netHandles[0].Send("connect");
+              next = GotoGame(data->firstParent, data->seed, std::move(netHandles));
+            }
+          } else {
+            throw Utility::NetWorkError{"接続失敗"};
+          }
+        } else if (data->func == "wait") {
+          FEVERMJ_LOG("待ち\n 受信サイズ %d\n", recvSize);
+          PreparationListenNetWork(10000);
+          netHandles[0].Send("wait");
+          sequence = [this, data] {WaitConnect2(data->firstParent, data->seed);};
         } else {
-          sequence = [this] {WaitSeed();}; 
+          throw Utility::NetWorkError{"接続失敗"};
         }
       } else {
-        MessageBox(GetMainWindowHandle(), "接続失敗", "エラー", 0);
-        next = GotoTitle();
+        throw Utility::NetWorkError{"データ取得失敗"};
       }
+    }
+  }
+
+  void WaitConnect2(int firstParent, int seed) {
+    netHandles[1] = Utility::NetWorkHandle{GetNewAcceptNetWork()}; 
+    if (netHandles[1]) {
+      netHandles[0].Send("connect");
+      StopListenNetWork();
+      std::swap(netHandles[0], netHandles[1]);
+      next = GotoGame(firstParent, seed, std::move(netHandles));
     }
   }
   
   Input input;
-  std::array<int, 2> netHandles;
-  int waitCount = 0;
+  Utility::NetHandleArray netHandles = {{}};
   std::function<void ()> sequence = [] {};
   View::Client clientView;
-  std::unique_ptr<Sequence> next = nullptr;
+  SequencePtr next = nullptr;
 };
 }}
 
