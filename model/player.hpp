@@ -268,18 +268,25 @@ class Player {
     return playerState.IsMenzen() ? Model::GetReachEnableIndex(river, hand, squeal) : ReachIndex{};
   }
 
+  void SetReachFirst() {
+    playerState.SetFirst();
+  }
+
   void SetOpenReach() {
     playerState.SetOpen();
+    playerState.SetFirst();
     hand.SetOpenReach();
   }
 
   void SetFeverReach() {
     playerState.SetFever();
+    playerState.SetFirst();
     hand.SetOpenReach();
   }
 
   void SetDoubleFeverReach() {
     playerState.SetDoubleFever();
+    playerState.SetFirst();
     hand.SetOpenReach();
   }
 
@@ -377,7 +384,6 @@ class Player {
     } else {
       playerState.SetReach();
     }
-    playerState.SetFirst();
     AddPoint(-1000);
   }
   

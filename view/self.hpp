@@ -172,7 +172,8 @@ class Self : boost::noncopyable {
                                                    boost::make_optional(tumo) : boost::none;
     for (int i = 0; i < self.GetHandSize(); ++i) {
       const auto currentPai = self.GetHandPai(i);
-      const int y = currentPai == darkKanPai || (i == selectedIndex && self.IsAddKanEnablePai(currentPai)) ? 496 : 512;
+      const int y = (darkKanPai && currentPai == darkKanPai) ||
+                    (i == selectedIndex && self.IsAddKanEnablePai(currentPai)) ? 496 : 512;
       DrawGraph(80 + 33 * i, y, paiImage.GetHandHandle(currentPai), TRUE);
     }
     const int y = tumo == darkKanPai || (selectedIndex == 14 && self.IsAddKanEnablePai(tumo)) ? 496 : 512;

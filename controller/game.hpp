@@ -166,6 +166,7 @@ class Game : public Sequence {
       }
       case Model::Response::Reach: {
         const auto pai = response.value0 == 14 ? players.TumoCut(house, true) : players.HandCut(house, response.value0, true);
+        players[house].SetReachFirst();
         sequence = [this, house, pai] {CheckSelfSqueal(house, pai, false, true);};
         field.AddReachBar();
         break;
@@ -664,6 +665,7 @@ class Game : public Sequence {
     gameView.SetWaitMode();
     gameView.SetSelectReachMode(reachIndex, [this] (int index) {
       SelfDiscardPai(index, false, Model::ReachState::ReachStart);
+      players[Model::House::Self].SetReachFirst();
       field.AddReachBar();
     });
     sequence = [] {};

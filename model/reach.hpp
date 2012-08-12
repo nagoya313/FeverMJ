@@ -59,7 +59,7 @@ ReachIndex GetReachEnableIndex(const River &river, const Hand &hand, const Squea
       SetReachEnableIndex(ii, index);
       const auto pai = i == hand.GetHandSize() ? *hand.GetTumo() : hand.GetHand(i);
       const auto wait = patern.waitPaiBits;
-      if (!(wait & (1 << pai)) && river.IsFuriten(wait, hand)) {
+      if (!(wait & (1 << pai)) && !river.IsFuriten(wait, hand)) {
         const auto f = CheckFever(patern.tenpaiPatern, squeal);
         if (f == 0x1 || f == 0x2) {
           SetFeverEnableIndex(ii, index);
