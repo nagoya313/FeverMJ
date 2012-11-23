@@ -10,3 +10,5 @@ Debug/*
 FeverMJ
 FeverMJ/*
 *.zip
+boost*
+test/gtest/*
