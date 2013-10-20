@@ -41,8 +41,8 @@ class Client: public Sequence {
 
  private:
   void WaitConnect() {
-    char iptemp[17] = "127.0.0.1";
-    //KeyInputString(0, 40, 17, iptemp, FALSE); 
+    char iptemp[17];
+    KeyInputString(0, 40, 17, iptemp, FALSE); 
     if (const auto  ip = Utility::GetIP(std::string{iptemp})) {
       netHandles[0] = Utility::NetWorkHandle{ConnectNetWork(*ip, 10000)};
       if (!netHandles[0]) {
@@ -61,7 +61,7 @@ class Client: public Sequence {
       if (const auto data = Utility::GetInitData(*recv)) {
         if (data->func == "ipsd") {
           FEVERMJ_LOG("待ち\n 受信サイズ %d", recvSize);
-          if (const auto ip = Utility::GetIP("127.0.0.2"/*data->ip*/)) {
+          if (const auto ip = Utility::GetIP(data->ip)) {
             netHandles[1] = Utility::NetWorkHandle{ConnectNetWork(*ip, 10000)};
             if (!netHandles[1]) {
               throw Utility::NetWorkError{"接続失敗"};
