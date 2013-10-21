@@ -208,14 +208,14 @@ class NetWork : boost::noncopyable {
     return "ti" + ti.str();
   }
 
-  void SendMessage(Model::House house, std::string message) {
+  void SendMessage(Model::House house, const std::string &message) {
     FEVERMJ_LOG("送信データ %s\n", message.c_str());
     if (netHandles[GetHouseIndex(house)]) {
       netHandles[GetHouseIndex(house)].Send(message);
     }
   }
 
-  void SendMessage(std::string message) {
+  void SendMessage(const std::string &message) {
     FEVERMJ_LOG("送信データ %s\n", message.c_str());
     for (const auto &handle : netHandles) {
       if (handle) {

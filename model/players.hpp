@@ -13,15 +13,18 @@ namespace FeverMJ { namespace Model {
 class Players {
  public:
   void GameStartInit(Field &field) {
-    House house = field.GetParentHouse();
+    House house = field.GetParent();
     for (int i = 0; i < 3; ++i) {
-      players[house].GameStartInit(field.GetFirstPais(), static_cast<Wind>(Wind::East + i), house);
+      if (house == House::Self) {
+	    players[house].GameStartInit({Pai::S3, Pai::S3, Pai::S3, Pai::S4, Pai::S4, Pai::S5, Pai::S5, Pai::S6, Pai::S6, Pai::S6, Pai::S7, Pai::S8, Pai::S9}, static_cast<Wind>(Wind::East + i), house);
+	  } else
+  	  players[house].GameStartInit(field.GetFirstPais(), static_cast<Wind>(Wind::East + i), house);
       house = GetDownHouse(house);
     }
   }
 
   void ContinueSetInit(Field &field) {
-    House house = field.GetParentHouse();
+    House house = field.GetParent();
     for (int i = 0; i < 3; ++i) {
       players[house].ContinueSetInit(field.GetFirstPais());
       house = GetDownHouse(house);
@@ -29,7 +32,7 @@ class Players {
   }
 
   void NextSetInit(Field &field) {
-    House house = field.GetParentHouse();
+    House house = field.GetParent();
     for (int i = 0; i < 3; ++i) {
       players[house].NextSetInit(field.GetFirstPais());
       house = GetDownHouse(house);
@@ -49,7 +52,8 @@ class Players {
       players[pay].AddPoint(-payPoint);
       getPoint += payPoint;
     }
-    players[goal].AddPoint(getPoint + field.ReleaseReachBar());
+    players[goal].AddPoint(getPoint + field.GetReachBarCount());
+	field.ReleaseReachBar();
   }
 
   void SetRonPoint(House goal, House pay, const Point &point, Field &field) {
@@ -57,12 +61,13 @@ class Players {
     for (auto &p : players) {
       p.AddPoint(0);
     }
-    players[goal].AddPoint(getPoint + field.ReleaseReachBar());
+    players[goal].AddPoint(getPoint + field.GetReachBarCount());
+	field.ReleaseReachBar();
     players[pay].AddPoint(-getPoint);
   }
 
   bool IsParentTenpai(const Field &field) {
-    return players[field.GetParentHouse()].IsTypeTenpai(field);
+    return players[field.GetParent()].IsTypeTenpai(field);
   }
 
   boost::optional<House> SetFlowPoint(Field &field, boost::optional<Point> &p) {
@@ -170,7 +175,8 @@ class Players {
   bool CheckFlowFeverPoint(Field &field) {
     for (int i = 0; i < 3; ++i) {
       if (players[i].IsFever()) {
-        players[i].AddPoint(6000 + field.ReleaseReachBar());
+        players[i].AddPoint(6000 + field.GetReachBarCount());
+		field.ReleaseReachBar();
         players[GetUpHouse(static_cast<House>(i))].AddPoint(-3000);
         players[GetDownHouse(static_cast<House>(i))].AddPoint(-3000);
         players[i].SetFlow(false, field);
@@ -183,7 +189,7 @@ class Players {
   }
 
   boost::optional<House> CheckLimitHandSink(Field &field, boost::optional<Point> &p) {
-    House parent = field.GetParentHouse();
+    House parent = field.GetParent();
     for (int i = 0; i < 3; ++i) {
       if (const auto point = players[parent].CheckLimitHandSink(field)) {
         p = *point;

@@ -14,80 +14,76 @@
 namespace FeverMJ { namespace Model {
 class Field {
  public:
-  void FirstGameInit(House parent) {
-    setCount = 0;
-    bar = 0;
-    firstParentHouse = parent;
+  explicit Field(House parent) : firstParent(parent){
     Init();
   }
-
-  void AddReachBar() {
-    bar += 1000;
-  }
-
-  void RemoveReachBar() {
-    bar -= 1000;
-  }
-
-  int ReleaseReachBar() {
-    int temp = bar;
-    bar = 0;
-    return temp;
-  }
-
+  
   void NextGameInit() {
-    setCount = 0;
-    firstParentHouse = GetDownHouse(firstParentHouse);
+    set = 0;
+    firstParent = GetDownHouse(firstParent);
     Init();
   }
 
   void ContinueSetInit() {
     Init();
   }
-
+  
   void NextSetInit() {
-    ++setCount;
+    ++set;
+	parent = GetDownHouse(parent);
     Init();
   }
 
-  bool IsOLas() const {
-    return setCount == 2;
+  void AddReachBar() {
+    reachBar += 1000;
+  }
+
+  void RemoveReachBar() {
+    reachBar -= 1000;
+  }
+  
+  void ReleaseReachBar() {
+    reachBar = 0;
+  }
+  
+  int GetReachBarCount() const {
+    return reachBar;
+  }
+
+  bool IsAllLast() const {
+    return set == 2;
   }
 
   int GetSetCount() const {
-    return setCount + 1;
+    return set + 1;
   }
   
-  House GetFirstParentHouse() const {
-    return firstParentHouse;
+  House GetFirstParent() const {
+    return firstParent;
   }
 
-  House GetParentHouse() const {
-    House house = GetFirstParentHouse();
-    for (int i = 0; i < GetSetCount() - 1; ++i) {
-      house = GetDownHouse(house);
-    }
-    return house;
+  House GetParent() const {
+    return parent;
   }
 
-  House GetBreakHouse() const {
-    return breakHouse;
+  House GetWareme() const {
+    return wareme;
   }
 
   HandVector GetFirstPais() {
-    return tumoMountain.PopFirstPais();
+    return yama.PopFirstPais();
   }
 
   Pai GetTumoPai() {
-    return tumoMountain.PopTumoPai();
+    return yama.PopTumoPai();
   }
 
   Pai GetRinsyan() {
-    return oneMountain.PopRinsyanPai();
+    return wanpai.PopRinsyanPai();
   }
 
   int GetTumoMountainSize() const {
-    return tumoMountain.GetMountainSize();
+    return yama.GetMountainSize();
   }
 
   bool IsPaiEmpty() const {
@@ -95,50 +91,50 @@ class Field {
   }
 
   void AddDora() {
-    tumoMountain.PopBackPai();
-    oneMountain.AddDora();
+    yama.PopBackPai();
+    wanpai.AddDora();
   }
 
   int GetDoraCount() const {
-    return oneMountain.GetDoraCount();
+    return wanpai.GetDoraCount();
   }
 
   boost::optional<Pai> GetDisplayDora(int i) const {
-    return oneMountain.GetDisplayDora(i);
+    return wanpai.GetDisplayDora(i);
   }
 
   DoraVector GetDoraList(bool withReverse) const {
-    return oneMountain.GetDoraList(withReverse);
+    return wanpai.GetDoraList(withReverse);
   }
 
  private:
   void Init() {
-    breakHouse = SelectBreakHouse();
-    tumoMountain.Init();
-    oneMountain.Init(tumoMountain.PopOnePais());
+    wareme = SelectWareme();
+    yama.Init();
+    wanpai.Init(yama.PopOnePais());
   }
 
-  House SelectBreakHouse() const {
+  House SelectWareme() const {
     switch ((GetRand(10) + 2) % 3) {
       case 0:
-        return GetParentHouse();
+        return GetParent();
       case 1:
-        return GetDownHouse(GetParentHouse());
+        return GetDownHouse(GetParent());
       case 2:
-        return GetUpHouse(GetParentHouse());
+        return GetUpHouse(GetParent());
       default:
         assert(false);
-        return GetParentHouse();
+        return GetParent();
     }
   }
 
-  int setCount;
-  int doraCount;
-  int bar;
-  House firstParentHouse;
-  House breakHouse;
-  TumoMountain tumoMountain;
-  OneMountain oneMountain;
+  int set = 0;
+  int reachBar = 0;
+  House firstParent;
+  House parent = firstParent;
+  House wareme;
+  TumoMountain yama;
+  OneMountain wanpai;
 };
 }}
 

@@ -15,12 +15,20 @@
 #include "../view/game.hpp"
 
 namespace FeverMJ { namespace Controller {
-class Game : public Sequence {
+class GameInit : public Sequence {
  public:
-  explicit Game(int firstParent, int seed, Utility::NetHandleArray &&handles) 
-      : network(std::move(handles)), isEndress(firstParent < 0) {
+  explicit GameInit(int seed) {
     SRand(seed);
-    field.FirstGameInit(firstParent >= 0 ? static_cast<Model::House>(firstParent) : static_cast<Model::House>(GetRand(2)));
+  }
+};
+
+class Game : public GameInit {
+ public:
+  explicit Game(int firstParent, int seed, Utility::NetHandleArray &&handles, bool endress) 
+      : GameInit(seed),
+	    network(std::move(handles)),
+		field(endress ? static_cast<Model::House>(GetRand(2)) : static_cast<Model::House>(firstParent)),
+		isEndress(endress) {
     gameView.SetStart();
     GameStart();
   }
@@ -35,7 +43,7 @@ class Game : public Sequence {
  private:
   void GameStart() {
     players.GameStartInit(field);
-    sequence = [this] {Tumo(field.GetFirstParentHouse());};
+    sequence = [this] {Tumo(field.GetFirstParent());};
   }
 
   void Tumo(Model::House house) {
@@ -113,7 +121,7 @@ class Game : public Sequence {
   void OtherHouseInterruptWait(Model::Pai pai, bool isAddDora, bool isReach) {
     CheckResponse();
     if (responsePair.up.data != Model::Response::Wait && responsePair.down.data != Model::Response::Wait) {
-      const auto resp = Model::GetHighPriorityResponse(field.GetParentHouse(), responsePair.up, responsePair.down);
+      const auto resp = Model::GetHighPriorityResponse(field.GetParent(), responsePair.up, responsePair.down);
       if (resp.first.data == Model::Response::Ron) {
         if (isReach) {
           field.RemoveReachBar();
@@ -797,7 +805,7 @@ class Game : public Sequence {
   void ChanKanInterruptWait(Model::Pai pai, bool isAddDora) {
     CheckResponse();
     if (responsePair.up.data != Model::Response::Wait && responsePair.down.data != Model::Response::Wait) {
-      const auto resp = Model::GetHighPriorityResponse(field.GetParentHouse(), responsePair.up, responsePair.down);
+      const auto resp = Model::GetHighPriorityResponse(field.GetParent(), responsePair.up, responsePair.down);
       if (resp.first.data == Model::Response::Pass) {
         if (isAddDora) {
           field.AddDora();
@@ -818,7 +826,7 @@ class Game : public Sequence {
   void EraseNorthInterruptWait(bool isAddDora) {
     CheckResponse();
     if (responsePair.up.data != Model::Response::Wait && responsePair.down.data != Model::Response::Wait) {
-      const auto resp = Model::GetHighPriorityResponse(field.GetParentHouse(), responsePair.up, responsePair.down);
+      const auto resp = Model::GetHighPriorityResponse(field.GetParent(), responsePair.up, responsePair.down);
       if (resp.first.data == Model::Response::Ron) {
         SelfInterruptRon(Model::Pai::North, resp);
       } else {
@@ -848,7 +856,7 @@ class Game : public Sequence {
       field.ContinueSetInit();
       players.ContinueSetInit(field);
     } else {
-      if (field.IsOLas()) {
+      if (field.IsAllLast()) {
         field.NextGameInit();
         GameStart();
       } else {
@@ -856,7 +864,7 @@ class Game : public Sequence {
         players.NextSetInit(field);
       }
     }
-    sequence = [this] {Tumo(field.GetParentHouse());};
+    sequence = [this] {Tumo(field.GetParent());};
   }
 
   void CheckResponse() {

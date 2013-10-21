@@ -27,15 +27,15 @@ class Point {
   }
 
   int GetTumoPoint(House goal, House pay, const Field &field) const {
-    const bool isBreak = field.GetBreakHouse() == pay || field.GetBreakHouse() == goal;
-    return field.GetParentHouse() == goal || field.GetParentHouse() == pay ?
+    const bool isBreak = field.GetWareme() == pay || field.GetWareme() == goal;
+    return field.GetParent() == goal || field.GetParent() == pay ?
            GetChildTumoParentPoint(isBreak) :
            GetChildTumoChildPoint(isBreak);
   }
 
   int GetRonPoint(House goal, House pay, const Field &field) const {
-    const bool isBreak = field.GetBreakHouse() == pay || field.GetBreakHouse() == goal;
-    return field.GetParentHouse() == goal ? GetParentRonPoint(isBreak) : GetChildRonPoint(isBreak);
+    const bool isBreak = field.GetWareme() == pay || field.GetWareme() == goal;
+    return field.GetParent() == goal ? GetParentRonPoint(isBreak) : GetChildRonPoint(isBreak);
   }
 
   int GetBasicPoint() const {

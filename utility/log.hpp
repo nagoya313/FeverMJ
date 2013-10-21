@@ -8,5 +8,4 @@
 #define FEVERMJ_LOG(...)
 #endif
 
-
 #endif

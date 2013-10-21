@@ -7,6 +7,7 @@
 #include "wait_type.hpp"
 #include "wind.hpp"
 #include "../utility/algorithm.hpp"
+#include "../utility/log.hpp"
 
 namespace FeverMJ { namespace Model {
 class HandRole {
@@ -140,10 +141,9 @@ class HandRole {
   }
 
   void CheckStraightRoleState(WaitType waitType, Pai waitHint, Pai goalPai, const std::vector<Pai> &straightList) {
-    boost::optional<Pai> beforePai;
+    boost::optional<Pai> beforePai = boost::none;
+	boost::optional<Pai> before2Pai = boost::none;
     const auto list = GoalPaiAddStraight(waitType, waitHint, goalPai, straightList);
-    int straightKindCount = 0;
-    int straightCount = 0;
     for (const auto pai : list) {
       const int number = GetNumber(pai);
       if (number > 0 && number < 6) {
@@ -152,20 +152,20 @@ class HandRole {
       if (!(number % 3)) {
         straightBits |= 1 << (3 * GetColor(pai) + number / 3);
       }
-      if (pai) {
-        ++straightKindCount;
-        beforePai = pai;
-      } else {
-        beforePai = boost::none;
+      if (beforePai && *beforePai == pai) {
+        if (!isIpeko) {
+		  isIpeko = true;
+		} else {
+		  if (!(before2Pai && *before2Pai == pai)) {
+		    isIpeko = false;
+			isRyanpeko = true;
+		  }
+		}
       }
-      ++straightCount;
+	  before2Pai = beforePai;
+	  beforePai = pai;
     }
-    if (straightCount - straightKindCount == 1) {
-      isIpeko = true;
-    } else if (straightCount - straightKindCount == 2) {
-      isRyanpeko = true;
-    }
-    hasStraight = straightCount;
+    hasStraight = !list.empty();
   }
   
   RoleType roleType;

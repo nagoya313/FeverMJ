@@ -11,7 +11,7 @@ class Title : public Sequence {
  public:
   Title() {
     titleView.Init([this] {
-      next = GotoGame(-1, time(nullptr), {});
+      next = GotoGame(0, time(nullptr), {}, true);
     }, [this] {
       next = GotoServer();
     }, [this] {
@@ -19,7 +19,7 @@ class Title : public Sequence {
     });
   }
 
-  std::unique_ptr<Sequence> Update() {
+  SequencePtr Update() override {
     input.Update();
     titleView.Draw(input);
     return std::move(next);
@@ -28,7 +28,7 @@ class Title : public Sequence {
  private:
   Input input;
   View::Title titleView;
-  std::unique_ptr<Sequence> next = nullptr;
+  SequencePtr next = nullptr;
 };
 }}
 

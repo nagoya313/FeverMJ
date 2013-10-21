@@ -116,6 +116,7 @@ template <typename Erase>
 std::uint32_t GetTenpaiSingle(Erase erase, Pai head, PaiKindArray &kind, std::vector<TenpaiPatern> &tenpais) {
   return GetTenpai(erase, [head](TenpaiPatern &hand) {
     hand.SetSingleWait(head);
+	FEVERMJ_LOG("‚½‚ñ‚« %d\n", head);
     return 1 << head;
   }, head, kind, tenpais);
 }

@@ -5,15 +5,17 @@
 #include "../utility/network.hpp"
 
 namespace FeverMJ { namespace Controller {
-class Sequence : boost::noncopyable {
- public:
-  virtual ~Sequence() = default;
-  virtual std::unique_ptr<Sequence> Update() = 0;
-};
+class Sequence;
 
 using SequencePtr = std::unique_ptr<Sequence>;
 
-SequencePtr GotoGame(int firstParent, int seed, Utility::NetHandleArray &&handles);
+class Sequence : boost::noncopyable {
+ public:
+  virtual ~Sequence() = default;
+  virtual SequencePtr Update() = 0;
+};
+
+SequencePtr GotoGame(int firstParent, int seed, Utility::NetHandleArray &&handles, bool endress = true);
 SequencePtr GotoTitle();
 SequencePtr GotoServer();
 SequencePtr GotoClient();

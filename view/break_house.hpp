@@ -10,7 +10,7 @@ namespace FeverMJ { namespace View {
 class BreakHouse : boost::noncopyable {
  public:
   void Draw(const Model::Field &field, const Utility::PaiImage &paiImage) {
-    switch (field.GetBreakHouse()) {
+    switch (field.GetWareme()) {
       case 0:
         DrawGraph(288, 192, paiImage.GetBreakHouseHandle(), TRUE);
         break;

@@ -5,8 +5,8 @@
 #include "title.hpp"
 
 namespace FeverMJ { namespace Controller {
-SequencePtr GotoGame(int firstParent, int seed, Utility::NetHandleArray &&handles) {
-  return SequencePtr{new Game{firstParent, seed, std::move(handles)}};
+SequencePtr GotoGame(int firstParent, int seed, Utility::NetHandleArray &&handles, bool endress) {
+  return SequencePtr{new Game{firstParent, seed, std::move(handles), endress}};
 }
 
 SequencePtr GotoTitle() {

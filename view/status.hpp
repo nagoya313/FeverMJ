@@ -22,7 +22,7 @@ class Status : boost::noncopyable {
 
  private:
   void DrawStatus(const Model::Field &field, const Model::Players &players) {
-    if (field.IsOLas()) {
+    if (field.IsAllLast()) {
       DrawString(328, 56, "ÉIÅ[ÉâÉX", GetColor(255, 255, 255));
     }
     // ãüëıñ_Ç‡

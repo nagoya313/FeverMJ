@@ -64,8 +64,7 @@ class NetWorkHandle {
       throw Utility::NetWorkError{"óM¸”s"};
     }
     if (GetNetWorkDataLength(handle)) {
-      std::string str;
-      str.resize(size);
+      std::string str(size, ' ');
       if (NetWorkRecv(handle, &str[0], str.length()) != -1) {
         return str;
       }
